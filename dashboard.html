@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard — CUCIGANG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body data-page="dashboard" class="min-h-screen pb-16">
+
+<!-- ============ SIDEBAR (desktop) ============ -->
+<aside class="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 w-64 px-5 py-7 border-r border-[var(--color-border)]">
+  <div class="flex items-center gap-2 px-2 mb-10">
+    <div class="w-9 h-9 rounded-xl bg-[#0057FF] flex items-center justify-center text-white font-bold">C</div>
+    <div>
+      <p class="font-semibold text-sm leading-tight">CUCIGANG</p>
+      <p class="text-[11px] text-[var(--color-text-soft)] leading-tight">Sales Dashboard</p>
+    </div>
+  </div>
+  <nav class="flex flex-col gap-1">
+    <a href="dashboard.html" data-nav-link="dashboard" class="sidebar-link flex items-center gap-3 px-3 py-2.5 text-sm">
+      <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+    </a>
+    <a href="report.html" data-nav-link="report" class="sidebar-link flex items-center gap-3 px-3 py-2.5 text-sm">
+      <i data-lucide="clipboard-list" class="w-4 h-4"></i> Daily Report
+    </a>
+    <a href="dashboard.html#leaderboard" data-nav-link="leaderboard" class="sidebar-link flex items-center gap-3 px-3 py-2.5 text-sm">
+      <i data-lucide="trophy" class="w-4 h-4"></i> Leaderboard
+    </a>
+    <a href="settings.html" data-nav-link="settings" class="sidebar-link flex items-center gap-3 px-3 py-2.5 text-sm">
+      <i data-lucide="settings" class="w-4 h-4"></i> Settings
+    </a>
+  </nav>
+  <div class="mt-auto px-2">
+    <p class="text-[11px] text-[var(--color-text-soft)]">v1.0.0 · Mock data mode</p>
+  </div>
+</aside>
+
+<div class="lg:pl-64">
+  <!-- ============ HEADER ============ -->
+  <header data-header class="sticky top-0 z-30 glass px-5 md:px-8 py-4 flex items-center justify-between transition-transform duration-300">
+    <div class="flex items-center gap-3">
+      <button data-nav-toggle class="lg:hidden w-9 h-9 rounded-full flex items-center justify-center card">
+        <i data-lucide="menu" class="w-4 h-4"></i>
+      </button>
+      <div>
+        <p class="text-lg md:text-xl font-bold leading-tight" id="greeting">Good Morning 👋</p>
+        <p class="text-xs text-[var(--color-text-soft)]" id="todayDate">—</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button class="w-9 h-9 rounded-full flex items-center justify-center card card-hover" title="Notifications">
+        <i data-lucide="bell" class="w-4 h-4"></i>
+      </button>
+      <button id="themeToggle" class="w-9 h-9 rounded-full flex items-center justify-center card card-hover" title="Toggle dark mode">
+        <i data-lucide="moon" data-theme-icon class="w-4 h-4"></i>
+      </button>
+      <a href="settings.html" class="w-9 h-9 rounded-full flex items-center justify-center card card-hover" title="Settings">
+        <i data-lucide="settings" class="w-4 h-4"></i>
+      </a>
+    </div>
+  </header>
+
+  <!-- Mobile nav panel -->
+  <div data-nav-panel class="hidden lg:hidden px-5 py-3 border-b border-[var(--color-border)] flex flex-wrap gap-2">
+    <a href="dashboard.html" class="chip chip-excellent">Dashboard</a>
+    <a href="report.html" class="chip">Daily Report</a>
+    <a href="settings.html" class="chip">Settings</a>
+  </div>
+
+  <main class="px-5 md:px-8 pt-6 max-w-[1400px] mx-auto">
+
+    <!-- ============ MANAGER EXECUTIVE SUMMARY (Bonus panel) ============ -->
+    <section class="card rounded-[var(--radius-card)] p-6 mb-6 fade-in" style="background: linear-gradient(135deg, var(--color-dark), #1e293b); color: white; border: none;">
+      <div class="flex items-center gap-2 mb-4">
+        <i data-lucide="zap" class="w-4 h-4 text-[#FFB200]"></i>
+        <p class="text-xs font-bold tracking-widest uppercase text-white/70">Today at a Glance</p>
+      </div>
+      <div id="execSummary" class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div class="skeleton h-14"></div><div class="skeleton h-14"></div>
+        <div class="skeleton h-14"></div><div class="skeleton h-14"></div>
+      </div>
+    </section>
+
+    <!-- ============ KPI CARDS ============ -->
+    <section class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
+      <div class="card card-hover rounded-[var(--radius-card)] p-5" id="kpiSales">
+        <p class="text-xs text-[var(--color-text-soft)] mb-2">Today's Sales</p>
+        <p class="text-2xl font-bold" data-value>—</p>
+        <p class="text-xs mt-1 font-medium" data-delta></p>
+      </div>
+      <div class="card card-hover rounded-[var(--radius-card)] p-5">
+        <p class="text-xs text-[var(--color-text-soft)] mb-2">Contact Rate</p>
+        <p class="text-2xl font-bold" id="kpiContact">—</p>
+      </div>
+      <div class="card card-hover rounded-[var(--radius-card)] p-5">
+        <p class="text-xs text-[var(--color-text-soft)] mb-2">Closing Rate</p>
+        <p class="text-2xl font-bold" id="kpiClosing">—</p>
+      </div>
+      <div class="card card-hover rounded-[var(--radius-card)] p-5">
+        <p class="text-xs text-[var(--color-text-soft)] mb-2">Booking</p>
+        <p class="text-2xl font-bold" id="kpiBooking">—</p>
+      </div>
+      <div class="card card-hover rounded-[var(--radius-card)] p-5">
+        <p class="text-xs text-[var(--color-text-soft)] mb-2">Performance</p>
+        <p class="text-2xl font-bold" id="kpiPerformance">—</p>
+      </div>
+    </section>
+
+    <!-- ============ MONTHLY PROGRESS ============ -->
+    <section class="card rounded-[var(--radius-card)] p-6 mb-6">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+        <div>
+          <p class="text-xs text-[var(--color-text-soft)] mb-1">Monthly Progress</p>
+          <p class="text-lg font-bold"><span id="mpCurrent">—</span> <span class="text-[var(--color-text-soft)] font-medium">/ <span id="mpTarget">—</span></span></p>
+        </div>
+        <div class="flex gap-6 text-sm">
+          <div><p class="text-[var(--color-text-soft)] text-xs">Remaining</p><p class="font-semibold" id="mpRemaining">—</p></div>
+          <div><p class="text-[var(--color-text-soft)] text-xs">Need / Day</p><p class="font-semibold" id="mpNeedPerDay">—</p></div>
+          <div><p class="text-[var(--color-text-soft)] text-xs">Forecast</p><p class="font-semibold" id="mpForecast">—</p></div>
+        </div>
+      </div>
+      <div class="progress-track h-3">
+        <div class="progress-fill" id="mpBar" style="width:0%"></div>
+      </div>
+      <p class="text-right text-xs font-semibold mt-2" id="mpPercent">0%</p>
+    </section>
+
+    <!-- ============ CHARTS ============ -->
+    <section class="grid grid-cols-1 xl:grid-cols-3 gap-5 mb-6">
+      <div class="card rounded-[var(--radius-card)] p-6 xl:col-span-2">
+        <p class="text-sm font-semibold mb-4">Sales Trend <span class="text-[var(--color-text-soft)] font-normal">· 14 days</span></p>
+        <div class="h-64"><canvas id="salesTrendChart"></canvas></div>
+      </div>
+      <div class="card rounded-[var(--radius-card)] p-6">
+        <p class="text-sm font-semibold mb-4">Agent Contribution</p>
+        <div class="h-64"><canvas id="contributionChart"></canvas></div>
+      </div>
+      <div class="card rounded-[var(--radius-card)] p-6">
+        <p class="text-sm font-semibold mb-4">Contact Rate</p>
+        <div class="h-56"><canvas id="contactRateChart"></canvas></div>
+      </div>
+      <div class="card rounded-[var(--radius-card)] p-6">
+        <p class="text-sm font-semibold mb-4">Closing Rate</p>
+        <div class="h-56"><canvas id="closingRateChart"></canvas></div>
+      </div>
+      <div class="card rounded-[var(--radius-card)] p-6">
+        <p class="text-sm font-semibold mb-4">Booking Trend</p>
+        <div class="h-56"><canvas id="bookingTrendChart"></canvas></div>
+      </div>
+    </section>
+
+    <!-- ============ LEADERBOARD ============ -->
+    <section id="leaderboard" class="card rounded-[var(--radius-card)] p-6 mb-6 scroll-mt-24">
+      <div class="flex items-center gap-2 mb-5">
+        <i data-lucide="trophy" class="w-4 h-4 text-[#FFB200]"></i>
+        <p class="text-sm font-semibold">Leaderboard <span class="text-[var(--color-text-soft)] font-normal">· this month</span></p>
+      </div>
+      <div id="leaderboardList" class="space-y-2">
+        <div class="skeleton h-16"></div><div class="skeleton h-16"></div><div class="skeleton h-16"></div>
+      </div>
+    </section>
+
+    <!-- ============ PERFORMANCE TABLE ============ -->
+    <section class="card rounded-[var(--radius-card)] p-6 mb-6 overflow-x-auto">
+      <p class="text-sm font-semibold mb-5">Agent Performance <span class="text-[var(--color-text-soft)] font-normal">· this month</span></p>
+      <table class="w-full text-sm min-w-[720px]">
+        <thead>
+          <tr class="text-left text-xs text-[var(--color-text-soft)] uppercase tracking-wide">
+            <th class="pb-3 font-medium">Agent</th>
+            <th class="pb-3 font-medium">Calls</th>
+            <th class="pb-3 font-medium">Connected</th>
+            <th class="pb-3 font-medium">Booking</th>
+            <th class="pb-3 font-medium">Sales</th>
+            <th class="pb-3 font-medium">Performance</th>
+            <th class="pb-3 font-medium">Status</th>
+          </tr>
+        </thead>
+        <tbody id="perfTableBody">
+          <tr><td colspan="7" class="py-6"><div class="skeleton h-10"></div></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============ AGENT DETAIL MODAL (bonus: performance timeline) ============ -->
+<div id="agentModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+  <div class="modal-backdrop absolute inset-0" data-modal-close></div>
+  <div class="modal-panel card relative w-full max-w-lg max-h-[85vh] overflow-y-auto p-6 z-10">
+    <button class="absolute top-5 right-5 w-8 h-8 rounded-full flex items-center justify-center card" data-modal-close>
+      <i data-lucide="x" class="w-4 h-4"></i>
+    </button>
+    <div id="agentModalContent"><div class="skeleton h-40"></div></div>
+  </div>
+</div>
+
+<script type="module" src="assets/js/dashboard.js"></script>
+</body>
+</html>

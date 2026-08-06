@@ -1,0 +1,230 @@
+/* ==========================================================
+   CUCIGANG Sales Performance Dashboard — Design Tokens
+   Derived from PRD Part 2, Section 2 (Color System)
+   ========================================================== */
+
+:root {
+  --color-primary: #0057ff;
+  --color-primary-soft: #e8efff;
+  --color-success: #16c47f;
+  --color-warning: #ffb200;
+  --color-danger: #ef4444;
+  --color-info: #06b6d4;
+  --color-bg: #f7f9fc;
+  --color-card: #ffffff;
+  --color-dark: #0f172a;
+  --color-text: #0f172a;
+  --color-text-soft: #64748b;
+  --color-border: rgba(15, 23, 42, 0.06);
+
+  --radius-card: 24px;
+  --radius-button: 16px;
+  --radius-input: 14px;
+  --radius-modal: 28px;
+
+  --shadow-card: 0 20px 60px rgba(0, 0, 0, 0.08);
+  --shadow-hover: 0 25px 80px rgba(0, 0, 0, 0.12);
+
+  --dur-fast: 200ms;
+  --dur-medium: 350ms;
+  --dur-slow: 500ms;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html.dark {
+  --color-bg: #0b1220;
+  --color-card: #121b2e;
+  --color-text: #f1f5f9;
+  --color-text-soft: #94a3b8;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-primary-soft: rgba(0, 87, 255, 0.16);
+}
+
+* {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  transition: background var(--dur-medium) var(--ease), color var(--dur-medium) var(--ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------- Glass / Card system ---------- */
+.glass {
+  background: color-mix(in srgb, var(--color-card) 80%, transparent);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+html.dark .glass {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.card {
+  background: var(--color-card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--color-border);
+  transition: transform var(--dur-medium) var(--ease), box-shadow var(--dur-medium) var(--ease);
+}
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+}
+
+.btn {
+  border-radius: var(--radius-button);
+  transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease);
+}
+.btn:active {
+  transform: scale(0.97);
+}
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+  box-shadow: 0 8px 24px rgba(0, 87, 255, 0.28);
+}
+.btn-primary:hover {
+  transform: scale(1.03);
+  box-shadow: 0 12px 32px rgba(0, 87, 255, 0.36);
+}
+
+input, select, textarea {
+  border-radius: var(--radius-input);
+  background: var(--color-card);
+  border: 1.5px solid var(--color-border);
+  color: var(--color-text);
+  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(0, 87, 255, 0.14);
+}
+
+/* ---------- Aurora background (landing) ---------- */
+.aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+}
+.aurora::before,
+.aurora::after {
+  content: "";
+  position: absolute;
+  width: 60vw;
+  height: 60vw;
+  max-width: 700px;
+  max-height: 700px;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.35;
+  animation: drift 18s ease-in-out infinite alternate;
+}
+.aurora::before {
+  background: var(--color-primary);
+  top: -10%;
+  left: -10%;
+}
+.aurora::after {
+  background: var(--color-info);
+  bottom: -15%;
+  right: -10%;
+  animation-delay: -9s;
+}
+@keyframes drift {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(6%, 8%) scale(1.15); }
+}
+
+/* ---------- Status chips ---------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.chip-elite { background: rgba(22,196,127,.12); color: #16C47F; }
+.chip-excellent { background: rgba(6,182,212,.12); color: #06B6D4; }
+.chip-strong { background: rgba(255,178,0,.14); color: #B77900; }
+.chip-average { background: rgba(255,146,0,.14); color: #C2570A; }
+.chip-coaching { background: rgba(239,68,68,.12); color: #EF4444; }
+
+/* ---------- Skeleton loading ---------- */
+.skeleton {
+  background: linear-gradient(90deg, var(--color-border) 25%, rgba(148,163,184,.18) 37%, var(--color-border) 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+  border-radius: 12px;
+}
+@keyframes shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+/* ---------- Toast ---------- */
+.toast {
+  transform: translateX(120%);
+  opacity: 0;
+  transition: transform var(--dur-medium) var(--ease), opacity var(--dur-medium) var(--ease);
+}
+.toast-in { transform: translateX(0); opacity: 1; }
+.toast-out { transform: translateX(120%); opacity: 0; }
+
+/* ---------- Misc ---------- */
+.progress-track {
+  background: var(--color-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress-fill {
+  background: linear-gradient(90deg, var(--color-primary), var(--color-info));
+  height: 100%;
+  border-radius: 999px;
+  transition: width 900ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fade-in {
+  animation: fadeIn var(--dur-slow) var(--ease) both;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.sidebar-link {
+  border-radius: var(--radius-button);
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.sidebar-link.active {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.table-row:hover {
+  background: var(--color-primary-soft);
+}
+
+.modal-backdrop {
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(6px);
+}
+.modal-panel {
+  border-radius: var(--radius-modal);
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: rgba(148,163,184,.35); border-radius: 8px; }
