@@ -1,7 +1,7 @@
 import { initTheme, toggleTheme, initMobileNav, markActiveNav, initHeaderScroll } from "./layout.js";
 import { API } from "./api.js";
 import { renderCharts } from "./charts.js";
-import { money, pct, greeting, fullDateLabel, animateCount, statusBadge, dateLabel } from "./utils.js";
+import { money, pct, greeting, fullDateLabel, animateCount, statusBadge, dateLabel, isoDate, toast } from "./utils.js";
 import { CONFIG } from "./config.js";
 
 let isDark = initTheme();
@@ -11,7 +11,7 @@ markActiveNav();
 initHeaderScroll();
 
 document.getElementById("themeToggle").addEventListener("click", () => {
-  isDark = toggleTheme((dark) => load(true));
+  isDark = toggleTheme((dark) => load());
 });
 
 document.getElementById("greeting").textContent = `${greeting()}, Nazril 👋`;
@@ -20,6 +20,42 @@ document.getElementById("todayDate").textContent = fullDateLabel(new Date());
 function chipClass(color) {
   return `chip chip-${color}`;
 }
+
+// ----------------------------------------------------------------
+// State: which day the KPI cards/exec summary reflect, and how
+// many days the Sales Trend chart spans.
+// ----------------------------------------------------------------
+const todayStr = isoDate(new Date());
+let viewDate = todayStr;
+let rangeDays = 14;
+
+const viewDateInput = document.getElementById("viewDate");
+const viewDateMobileInput = document.getElementById("viewDateMobile");
+[viewDateInput, viewDateMobileInput].forEach((el) => {
+  if (!el) return;
+  el.max = todayStr;
+  el.value = todayStr;
+  el.addEventListener("change", (e) => {
+    viewDate = e.target.value || todayStr;
+    [viewDateInput, viewDateMobileInput].forEach((other) => other && (other.value = viewDate));
+    load();
+  });
+});
+
+document.getElementById("jumpToday")?.addEventListener("click", () => {
+  viewDate = todayStr;
+  [viewDateInput, viewDateMobileInput].forEach((el) => el && (el.value = todayStr));
+  load();
+});
+
+document.querySelectorAll(".range-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    rangeDays = Number(btn.dataset.range);
+    document.querySelectorAll(".range-btn").forEach((b) => b.classList.toggle("active", b === btn));
+    loadChartOnly();
+  });
+});
+document.querySelector(`.range-btn[data-range="${rangeDays}"]`)?.classList.add("active");
 
 function renderExecSummary(data) {
   const { kpi, monthly, executiveSummary } = data;
@@ -150,7 +186,12 @@ async function openAgentModal(name) {
   const content = document.getElementById("agentModalContent");
   content.innerHTML = `<div class="skeleton h-40"></div>`;
 
-  const { stats, timeline } = await API.getAgent(name);
+  const res = await API.getAgent(name);
+  if (res.status !== "success") {
+    content.innerHTML = `<p class="text-sm text-[#EF4444] py-8 text-center">${res.message || "Could not load this agent's data."}</p>`;
+    return;
+  }
+  const { stats, timeline } = res;
   const band = statusBadge(stats.score);
 
   content.innerHTML = `
@@ -194,17 +235,35 @@ document.querySelectorAll("[data-modal-close]").forEach((el) =>
   })
 );
 
-async function load(skipChartFade) {
-  const data = await API.getDashboard();
+async function load() {
+  const data = await API.getDashboard({ date: viewDate, range: rangeDays });
+  if (data.status !== "success") {
+    toast(data.message || "Failed to load dashboard data", "error");
+    return;
+  }
+  const isToday = viewDate === todayStr;
+  document.getElementById("kpiSalesLabel").textContent = isToday ? "Today's Sales" : `Sales — ${dateLabel(viewDate)}`;
+  document.getElementById("execSummaryTitle").textContent = isToday ? "Today at a Glance" : `${dateLabel(viewDate)} at a Glance`;
+
   renderExecSummary(data);
   renderKpis(data);
   renderMonthly(data);
   renderCharts(data.chart, document.documentElement.classList.contains("dark"));
 
-  const { leaderboard } = await API.getLeaderboard();
-  renderLeaderboard(leaderboard);
-  renderTable(leaderboard);
+  const leaderboardRes = await API.getLeaderboard({ date: viewDate });
+  if (leaderboardRes.status !== "success") {
+    toast(leaderboardRes.message || "Failed to load leaderboard", "error");
+    return;
+  }
+  renderLeaderboard(leaderboardRes.leaderboard);
+  renderTable(leaderboardRes.leaderboard);
   lucide.createIcons();
+}
+
+async function loadChartOnly() {
+  const data = await API.getDashboard({ date: viewDate, range: rangeDays });
+  if (data.status !== "success") return;
+  renderCharts(data.chart, document.documentElement.classList.contains("dark"));
 }
 
 load();

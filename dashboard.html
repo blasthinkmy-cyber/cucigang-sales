@@ -54,6 +54,11 @@
       </div>
     </div>
     <div class="flex items-center gap-2">
+      <div class="hidden sm:flex items-center gap-1.5 card px-2.5 py-1.5 rounded-full">
+        <i data-lucide="calendar" class="w-3.5 h-3.5 text-[var(--color-text-soft)]"></i>
+        <input id="viewDate" type="date" class="!border-0 !shadow-none !p-0 !bg-transparent text-xs font-medium w-[112px]" />
+      </div>
+      <button id="jumpToday" class="hidden sm:inline-flex btn px-3 py-2 text-xs font-semibold card card-hover">Today</button>
       <button class="w-9 h-9 rounded-full flex items-center justify-center card card-hover" title="Notifications">
         <i data-lucide="bell" class="w-4 h-4"></i>
       </button>
@@ -67,10 +72,14 @@
   </header>
 
   <!-- Mobile nav panel -->
-  <div data-nav-panel class="hidden lg:hidden px-5 py-3 border-b border-[var(--color-border)] flex flex-wrap gap-2">
+  <div data-nav-panel class="hidden lg:hidden px-5 py-3 border-b border-[var(--color-border)] flex flex-wrap items-center gap-2">
     <a href="dashboard.html" class="chip chip-excellent">Dashboard</a>
     <a href="report.html" class="chip">Daily Report</a>
     <a href="settings.html" class="chip">Settings</a>
+    <div class="flex items-center gap-1.5 card px-2.5 py-1.5 rounded-full ml-auto">
+      <i data-lucide="calendar" class="w-3.5 h-3.5 text-[var(--color-text-soft)]"></i>
+      <input id="viewDateMobile" type="date" class="!border-0 !shadow-none !p-0 !bg-transparent text-xs font-medium w-[112px]" />
+    </div>
   </div>
 
   <main class="px-5 md:px-8 pt-6 max-w-[1400px] mx-auto">
@@ -79,7 +88,7 @@
     <section class="card rounded-[var(--radius-card)] p-6 mb-6 fade-in" style="background: linear-gradient(135deg, var(--color-dark), #1e293b); color: white; border: none;">
       <div class="flex items-center gap-2 mb-4">
         <i data-lucide="zap" class="w-4 h-4 text-[#FFB200]"></i>
-        <p class="text-xs font-bold tracking-widest uppercase text-white/70">Today at a Glance</p>
+        <p class="text-xs font-bold tracking-widest uppercase text-white/70" id="execSummaryTitle">Today at a Glance</p>
       </div>
       <div id="execSummary" class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
         <div class="skeleton h-14"></div><div class="skeleton h-14"></div>
@@ -90,7 +99,7 @@
     <!-- ============ KPI CARDS ============ -->
     <section class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
       <div class="card card-hover rounded-[var(--radius-card)] p-5" id="kpiSales">
-        <p class="text-xs text-[var(--color-text-soft)] mb-2">Today's Sales</p>
+        <p class="text-xs text-[var(--color-text-soft)] mb-2" id="kpiSalesLabel">Today's Sales</p>
         <p class="text-2xl font-bold" data-value>—</p>
         <p class="text-xs mt-1 font-medium" data-delta></p>
       </div>
@@ -134,7 +143,14 @@
     <!-- ============ CHARTS ============ -->
     <section class="grid grid-cols-1 xl:grid-cols-3 gap-5 mb-6">
       <div class="card rounded-[var(--radius-card)] p-6 xl:col-span-2">
-        <p class="text-sm font-semibold mb-4">Sales Trend <span class="text-[var(--color-text-soft)] font-normal">· 14 days</span></p>
+        <div class="flex items-center justify-between mb-4">
+          <p class="text-sm font-semibold">Sales Trend</p>
+          <div id="rangeToggle" class="flex items-center gap-1 bg-[var(--color-bg)] rounded-full p-1">
+            <button data-range="7" class="range-btn px-3 py-1 rounded-full text-xs font-semibold">7D</button>
+            <button data-range="14" class="range-btn px-3 py-1 rounded-full text-xs font-semibold">14D</button>
+            <button data-range="30" class="range-btn px-3 py-1 rounded-full text-xs font-semibold">30D</button>
+          </div>
+        </div>
         <div class="h-64"><canvas id="salesTrendChart"></canvas></div>
       </div>
       <div class="card rounded-[var(--radius-card)] p-6">

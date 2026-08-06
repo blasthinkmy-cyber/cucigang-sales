@@ -183,6 +183,17 @@ input:focus, select:focus, textarea:focus {
 .toast-in { transform: translateX(0); opacity: 1; }
 .toast-out { transform: translateX(120%); opacity: 0; }
 
+/* ---------- Range toggle (chart period picker) ---------- */
+.range-btn {
+  color: var(--color-text-soft);
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.range-btn.active {
+  background: var(--color-card);
+  color: var(--color-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
 /* ---------- Misc ---------- */
 .progress-track {
   background: var(--color-border);

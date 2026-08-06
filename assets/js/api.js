@@ -18,23 +18,39 @@ import {
 
 // ----------------------------------------------------------------
 // Real backend call helper (Google Apps Script Web App)
+// Query params are built with URLSearchParams so each one arrives
+// as its own e.parameter.xxx on the Apps Script side — never nest
+// a second query string inside the "path" value.
 // ----------------------------------------------------------------
 async function callApi(path, options = {}) {
-  const url = `${CONFIG.API_URL}?path=${encodeURIComponent(path)}`;
-  const res = await fetch(url, {
-    method: options.method || "GET",
-    body: options.body ? JSON.stringify(options.body) : undefined,
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-  });
-  if (!res.ok) throw new Error(`API error ${res.status}`);
-  return res.json();
+  const params = new URLSearchParams({ path, ...(options.params || {}) });
+  const url = `${CONFIG.API_URL}?${params.toString()}`;
+  try {
+    const res = await fetch(url, {
+      method: options.method || "GET",
+      body: options.body ? JSON.stringify(options.body) : undefined,
+      // text/plain avoids a CORS preflight (OPTIONS) request, which
+      // Apps Script Web Apps do not handle.
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    return {
+      status: "error",
+      message:
+        `Could not reach the backend (${err.message}). Check: (1) the Apps Script deployment's ` +
+        `"Who has access" is set to "Anyone" — not "Anyone with Google account" — and (2) you deployed ` +
+        `a "New version" after the last code change.`,
+    };
+  }
 }
 
 // ----------------------------------------------------------------
 // Mock computations — mirrors what Analytics.gs / Dashboard.gs
 // would compute server-side from the REPORTS sheet.
 // ----------------------------------------------------------------
-function computeAgentStats(agentName, rows, settings) {
+function computeAgentStats(agentName, rows, settings, passed) {
   const agentRows = rows.filter((r) => r.agent === agentName);
   const totals = sumReports(agentRows);
   const cRate = contactRate(totals.connected, totals.calls);
@@ -42,7 +58,6 @@ function computeAgentStats(agentName, rows, settings) {
   const avgSale = averageTicket(totals.sales, totals.booking);
 
   const daysReported = new Set(agentRows.map((r) => r.date)).size;
-  const passed = workingDaysPassed();
   const consistency = passed > 0 ? Math.min(daysReported / passed, 1) : 0;
 
   const score = performanceScore({
@@ -58,47 +73,52 @@ function computeAgentStats(agentName, rows, settings) {
   return { agent: agentName, ...totals, contactRate: cRate, closingRate: clRate, bookingRate: bookingRate(totals.booking, totals.connected), avgSale, score };
 }
 
-function mockGetDashboard() {
+// viewDate: the day the KPI cards / executive summary should reflect (defaults to today)
+// rangeDays: how many days the trend charts should cover (defaults to 14)
+function mockGetDashboard(viewDate, rangeDays) {
   const settings = Store.getSettings();
   const rows = Store.getReports();
-  const today = isoDate(new Date());
-  const todayRows = rows.filter((r) => r.date === today);
-  const monthRows = rows.filter((r) => r.date.slice(0, 7) === today.slice(0, 7));
+  const day = viewDate || isoDate(new Date());
+  const monthPrefix = day.slice(0, 7);
+  const dayDateObj = new Date(day + "T00:00:00");
 
-  const todayTotals = sumReports(todayRows);
+  const dayRows = rows.filter((r) => r.date === day);
+  const monthRows = rows.filter((r) => r.date.slice(0, 7) === monthPrefix);
+
+  const dayTotals = sumReports(dayRows);
   const monthTotals = sumReports(monthRows);
 
-  const passed = workingDaysPassed();
-  const remDays = remainingWorkingDays(settings.WORKING_DAYS);
+  const passed = workingDaysPassed(dayDateObj);
+  const remDays = remainingWorkingDays(settings.WORKING_DAYS, dayDateObj);
   const remaining = remainingTarget(settings.MONTHLY_TARGET, monthTotals.sales);
 
-  const perAgentToday = AGENTS.map((a) => computeAgentStats(a.name, todayRows, settings));
-  const perAgentMonth = AGENTS.map((a) => computeAgentStats(a.name, monthRows, settings));
+  const perAgentDay = AGENTS.map((a) => computeAgentStats(a.name, dayRows, settings, passed));
+  const perAgentMonth = AGENTS.map((a) => computeAgentStats(a.name, monthRows, settings, passed));
 
-  const topToday = [...perAgentToday].sort((a, b) => b.sales - a.sales)[0];
-  const needsCoaching = [...perAgentMonth].sort((a, b) => a.score - b.score)[0];
+  const topToday = [...perAgentDay].filter((a) => a.sales > 0).sort((a, b) => b.sales - a.sales)[0] || null;
+  const monthScored = perAgentMonth.filter((a) => a.calls > 0);
+  const needsCoaching = monthScored.length ? monthScored.sort((a, b) => a.score - b.score)[0] : null;
 
-  // yesterday for delta
-  const yest = new Date();
-  yest.setDate(yest.getDate() - 1);
-  const yestRows = rows.filter((r) => r.date === isoDate(yest));
-  const yestTotals = sumReports(yestRows);
-  const salesDelta = yestTotals.sales > 0 ? ((todayTotals.sales - yestTotals.sales) / yestTotals.sales) * 100 : 0;
+  // previous day for delta
+  const prev = new Date(dayDateObj);
+  prev.setDate(prev.getDate() - 1);
+  const prevTotals = sumReports(rows.filter((r) => r.date === isoDate(prev)));
+  const salesDelta = prevTotals.sales > 0 ? ((dayTotals.sales - prevTotals.sales) / prevTotals.sales) * 100 : 0;
 
   return {
     status: "success",
-    date: today,
+    date: day,
     settings,
     kpi: {
-      todaySales: todayTotals.sales,
+      todaySales: dayTotals.sales,
       salesDelta,
-      contactRate: contactRate(todayTotals.connected, todayTotals.calls),
-      closingRate: closingRate(todayTotals.booking, todayTotals.connected),
-      booking: todayTotals.booking,
-      calls: todayTotals.calls,
-      connected: todayTotals.connected,
-      avgSale: averageTicket(todayTotals.sales, todayTotals.booking),
-      performanceScore: Math.round(perAgentToday.reduce((s, a) => s + a.score, 0) / perAgentToday.length) || 0,
+      contactRate: contactRate(dayTotals.connected, dayTotals.calls),
+      closingRate: closingRate(dayTotals.booking, dayTotals.connected),
+      booking: dayTotals.booking,
+      calls: dayTotals.calls,
+      connected: dayTotals.connected,
+      avgSale: averageTicket(dayTotals.sales, dayTotals.booking),
+      performanceScore: perAgentDay.length ? Math.round(perAgentDay.reduce((s, a) => s + a.score, 0) / perAgentDay.length) : 0,
     },
     monthly: {
       target: settings.MONTHLY_TARGET,
@@ -111,24 +131,25 @@ function mockGetDashboard() {
       remainingDays: remDays,
     },
     executiveSummary: {
-      topPerformer: topToday && topToday.sales > 0 ? topToday : null,
-      needsCoaching: needsCoaching && needsCoaching.calls > 0 ? needsCoaching : null,
+      topPerformer: topToday,
+      needsCoaching,
     },
-    perAgentToday,
+    perAgentToday: perAgentDay,
     perAgentMonth,
-    chart: buildChartSeries(rows, settings),
+    chart: buildChartSeries(rows, settings, rangeDays || 14, dayDateObj),
   };
 }
 
-function buildChartSeries(rows, settings, days = 14) {
+function buildChartSeries(rows, settings, days, endDate) {
   const labels = [];
   const sales = [];
   const contact = [];
   const closing = [];
   const booking = [];
-  const today = new Date();
+  const end = endDate || new Date();
+
   for (let d = days - 1; d >= 0; d--) {
-    const date = new Date(today);
+    const date = new Date(end);
     date.setDate(date.getDate() - d);
     const iso = isoDate(date);
     const dayRows = rows.filter((r) => r.date === iso);
@@ -140,20 +161,22 @@ function buildChartSeries(rows, settings, days = 14) {
     booking.push(totals.booking);
   }
 
+  const monthPrefix = isoDate(end).slice(0, 7);
   const contribution = AGENTS.map((a) => {
-    const agentRows = rows.filter((r) => r.agent === a.name && r.date.slice(0, 7) === isoDate(today).slice(0, 7));
+    const agentRows = rows.filter((r) => r.agent === a.name && r.date.slice(0, 7) === monthPrefix);
     return { agent: a.name, sales: sumReports(agentRows).sales };
   });
 
   return { labels, sales, contact, closing, booking, contribution };
 }
 
-function mockGetLeaderboard() {
+function mockGetLeaderboard(viewDate) {
   const rows = Store.getReports();
   const settings = Store.getSettings();
-  const today = isoDate(new Date());
-  const monthRows = rows.filter((r) => r.date.slice(0, 7) === today.slice(0, 7));
-  const list = AGENTS.map((a) => computeAgentStats(a.name, monthRows, settings)).sort((a, b) => b.sales - a.sales);
+  const day = viewDate || isoDate(new Date());
+  const passed = workingDaysPassed(new Date(day + "T00:00:00"));
+  const monthRows = rows.filter((r) => r.date.slice(0, 7) === day.slice(0, 7));
+  const list = AGENTS.map((a) => computeAgentStats(a.name, monthRows, settings, passed)).sort((a, b) => b.sales - a.sales);
   return { status: "success", leaderboard: list };
 }
 
@@ -161,8 +184,10 @@ function mockGetAgent(name) {
   const rows = Store.getReports();
   const settings = Store.getSettings();
   const agentRows = rows.filter((r) => r.agent === name).sort((a, b) => (a.date < b.date ? 1 : -1));
-  const monthRows = agentRows.filter((r) => r.date.slice(0, 7) === isoDate(new Date()).slice(0, 7));
-  const stats = computeAgentStats(name, monthRows, settings);
+  const today = isoDate(new Date());
+  const monthRows = agentRows.filter((r) => r.date.slice(0, 7) === today.slice(0, 7));
+  const passed = workingDaysPassed();
+  const stats = computeAgentStats(name, monthRows, settings, passed);
   const timeline = agentRows.slice(0, 10).map((r) => ({
     date: r.date,
     sales: r.sales,
@@ -209,34 +234,40 @@ function mockSubmitReport(payload) {
 
 // ----------------------------------------------------------------
 // Public API — same shape whether mock or real
+// opts: { date: "YYYY-MM-DD", range: 7|14|30 }
 // ----------------------------------------------------------------
 export const API = {
-  async getDashboard() {
-    if (CONFIG.USE_MOCK_DATA) return mockGetDashboard();
-    return callApi("/dashboard");
+  async getDashboard(opts = {}) {
+    if (CONFIG.USE_MOCK_DATA) return mockGetDashboard(opts.date, opts.range);
+    const params = {};
+    if (opts.date) params.date = opts.date;
+    if (opts.range) params.range = opts.range;
+    return callApi("dashboard", { params });
   },
-  async getLeaderboard() {
-    if (CONFIG.USE_MOCK_DATA) return mockGetLeaderboard();
-    return callApi("/leaderboard");
+  async getLeaderboard(opts = {}) {
+    if (CONFIG.USE_MOCK_DATA) return mockGetLeaderboard(opts.date);
+    const params = {};
+    if (opts.date) params.date = opts.date;
+    return callApi("leaderboard", { params });
   },
   async getAgent(name) {
     if (CONFIG.USE_MOCK_DATA) return mockGetAgent(name);
-    return callApi(`/agent?id=${encodeURIComponent(name)}`);
+    return callApi("agent", { params: { id: name } });
   },
   async getSettings() {
     if (CONFIG.USE_MOCK_DATA) return { status: "success", settings: Store.getSettings() };
-    return callApi("/settings");
+    return callApi("settings");
   },
   async updateSettings(partial) {
     if (CONFIG.USE_MOCK_DATA) return { status: "success", settings: Store.saveSettings(partial) };
-    return callApi("/settings", { method: "POST", body: partial });
+    return callApi("settings", { method: "POST", body: partial });
   },
   async submitReport(payload) {
     if (CONFIG.USE_MOCK_DATA) return mockSubmitReport(payload);
-    return callApi("/submitReport", { method: "POST", body: payload });
+    return callApi("submitReport", { method: "POST", body: payload });
   },
   async getAgentsList() {
     if (CONFIG.USE_MOCK_DATA) return { status: "success", agents: Store.getAgents() };
-    return callApi("/agents");
+    return callApi("agents");
   },
 };
