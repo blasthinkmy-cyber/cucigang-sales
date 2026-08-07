@@ -7,7 +7,7 @@
 export const CONFIG = {
   // Paste your Google Apps Script Web App URL here after deployment.
   // Example: "https://script.google.com/macros/s/AKfycbxxxx/exec"
-  API_URL: "https://script.google.com/macros/s/AKfycbxaAfzqSs5Kexby8YExtculrehE4TJTa3pm8yoyzRRjjb_sWvbiWggKVF36JRTyTyGO/exec",
+  API_URL: "https://script.google.com/macros/s/AKfycbySOELbLB4AbfxHUeLmI3ImVzsTljOZElYmsqvIBWPpY2bREvXPAgZ2VIMiSOPD30qN/exec",
 
   // While true, the app runs entirely on generated local data so it
   // works instantly with no backend. Flip to false once API_URL is set.
