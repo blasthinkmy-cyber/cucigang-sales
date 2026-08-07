@@ -1,4 +1,4 @@
-import { CONFIG, getScoreBand } from "./config.js";
+import { CONFIG, getScoreBand, SCORE_BANDS, ALERT_RULES } from "./config.js";
 
 // ----------------------------------------------------------------
 // Formatting
@@ -35,7 +35,8 @@ export function greeting() {
 }
 
 // ----------------------------------------------------------------
-// KPI Formulas (PRD Part 3, Section 11)
+// KPI Formulas — derived entirely from the 8 fields agents submit:
+// Date, Agent, Fresh, Freezing, Calls, Connected, Booking, Sales
 // ----------------------------------------------------------------
 export function contactRate(connected, calls) {
   return calls > 0 ? (connected / calls) * 100 : 0;
@@ -58,9 +59,11 @@ export function needPerDay(remaining, remainingDays) {
 export function forecast(currentSales, daysPassed, workingDays) {
   return daysPassed > 0 ? (currentSales / daysPassed) * workingDays : 0;
 }
+export function commission(sales, ratePct) {
+  return (Number(sales) || 0) * ((Number(ratePct) || 0) / 100);
+}
 
-// Performance Score (PRD Part 3, Section 12)
-// Sales 40% + Contact Rate 20% + Closing Rate 20% + Booking 10% + Reporting Consistency 10%
+// Performance Score: Sales 40% + Contact Rate 20% + Closing Rate 20% + Booking 10% + Reporting Consistency 10%
 export function performanceScore({ sales, target, cRate, clRate, booking, bookingGoal, consistency }) {
   const salesScore = Math.min(sales / (target || 1), 1) * 40;
   const contactScore = Math.min(cRate / 100, 1) * 20;
@@ -72,6 +75,56 @@ export function performanceScore({ sales, target, cRate, clRate, booking, bookin
 
 export function statusBadge(score) {
   return getScoreBand(score);
+}
+
+// Count agents per performance band — powers the Team Health widget.
+export function teamHealthCounts(agentStatsList) {
+  const counts = SCORE_BANDS.map((b) => ({ ...b, count: 0 }));
+  agentStatsList.forEach((a) => {
+    const band = getScoreBand(a.score);
+    const bucket = counts.find((c) => c.label === band.label);
+    if (bucket) bucket.count++;
+  });
+  return counts;
+}
+
+// ----------------------------------------------------------------
+// Coaching Alerts — automatic detection, no manual flagging needed.
+// ----------------------------------------------------------------
+export function detectCoachingAlerts(agentName, agentDailyRowsDesc, monthStats, teamAvgConnected) {
+  const alerts = [];
+
+  // Rule 1: sales fell on each of the last N reported days
+  const streak = ALERT_RULES.SALES_DROP_STREAK_DAYS;
+  if (agentDailyRowsDesc.length >= streak) {
+    const recent = agentDailyRowsDesc.slice(0, streak);
+    let dropping = true;
+    for (let i = 0; i < recent.length - 1; i++) {
+      if (recent[i].sales >= recent[i + 1].sales) {
+        dropping = false;
+        break;
+      }
+    }
+    if (dropping) {
+      alerts.push({ agent: agentName, type: "sales_drop", message: `Sales turun ${streak} hari berturut` });
+    }
+  }
+
+  // Rule 2: low contact rate
+  if (monthStats.calls > 0 && monthStats.contactRate < ALERT_RULES.LOW_CONTACT_RATE) {
+    alerts.push({ agent: agentName, type: "low_contact", message: `Contact Rate bawah ${ALERT_RULES.LOW_CONTACT_RATE}%` });
+  }
+
+  // Rule 3: low booking rate despite above-average connected volume
+  if (
+    monthStats.connected > teamAvgConnected &&
+    monthStats.bookingRate < ALERT_RULES.LOW_BOOKING_RATE_WITH_HIGH_CONNECTED &&
+    monthStats.connected > 0
+  ) {
+    alerts.push({ agent: agentName, type: "low_booking", message: "Booking rendah walaupun Connected tinggi" });
+  }
+
+  return alerts;
 }
 
 // ----------------------------------------------------------------
@@ -89,15 +142,15 @@ function mulberry32(seed) {
 }
 
 export const AGENTS = [
-  { id: "AG001", name: "Ali", team: "Alpha", skill: 0.92 },
-  { id: "AG002", name: "Mira", team: "Alpha", skill: 0.78 },
-  { id: "AG003", name: "Fatin", team: "Bravo", skill: 0.83 },
-  { id: "AG004", name: "Aiman", team: "Bravo", skill: 0.65 },
-  { id: "AG005", name: "Siti", team: "Bravo", skill: 0.55 },
+  { id: "AG001", name: "Ali", team: "Alpha", skill: 0.92, target: 20000 },
+  { id: "AG002", name: "Mira", team: "Alpha", skill: 0.78, target: 16000 },
+  { id: "AG003", name: "Fatin", team: "Bravo", skill: 0.83, target: 18000 },
+  { id: "AG004", name: "Aiman", team: "Bravo", skill: 0.65, target: 14000 },
+  { id: "AG005", name: "Siti", team: "Bravo", skill: 0.55, target: 12000 },
 ];
 
-// Generates 30 days of REPORTS rows, matching the sheet schema:
-// Date | Agent | Fresh | Freezing | Calls | Connected | Booking | Sales | FollowUp | NoAnswer | Rejected | Remarks
+// Generates N days of REPORTS rows — the simplified 8-field schema:
+// Date | Agent | Fresh | Freezing | Calls | Connected | Booking | Sales
 export function generateMockReports(days = 30) {
   const rows = [];
   const today = new Date();
@@ -105,8 +158,7 @@ export function generateMockReports(days = 30) {
     const date = new Date(today);
     date.setDate(date.getDate() - d);
     const iso = isoDate(date);
-    // Sundays off
-    if (date.getDay() === 0) continue;
+    if (date.getDay() === 0) continue; // Sundays off
 
     AGENTS.forEach((agent, idx) => {
       const rnd = mulberry32(iso.split("-").join("") * 1 + idx * 97);
@@ -117,9 +169,6 @@ export function generateMockReports(days = 30) {
       const sales = Math.round(booking * avgTicket);
       const fresh = Math.round(30 + rnd() * 40);
       const freezing = Math.round(20 + rnd() * 40);
-      const followup = Math.round(connected * 0.3);
-      const noanswer = Math.max(calls - connected - Math.round(calls * 0.05), 0);
-      const rejected = Math.max(calls - connected - noanswer, 0);
 
       rows.push({
         date: iso,
@@ -131,10 +180,6 @@ export function generateMockReports(days = 30) {
         connected,
         booking,
         sales,
-        followup,
-        noanswer,
-        rejected,
-        remarks: "",
         timestamp: `${iso}T${9 + (idx % 6)}:${(10 + idx * 7) % 60}:00`,
       });
     });
@@ -178,7 +223,7 @@ export function toast(message, type = "success") {
     warning: "bg-[#FFB200]",
     error: "bg-[#EF4444]",
   };
-  el.className = `toast fixed top-6 right-6 z-[100] ${colors[type]} text-white px-5 py-4 rounded-2xl shadow-2xl flex items-center gap-3 font-medium text-sm`;
+  el.className = `toast fixed top-6 right-6 z-[100] ${colors[type]} text-white px-5 py-4 rounded-2xl shadow-2xl flex items-center gap-3 font-medium text-sm max-w-sm`;
   el.innerHTML = `<span>${type === "success" ? "✓" : type === "warning" ? "⚠" : "✕"}</span><span>${message}</span>`;
   document.body.appendChild(el);
   requestAnimationFrame(() => el.classList.add("toast-in"));
@@ -186,7 +231,7 @@ export function toast(message, type = "success") {
     el.classList.remove("toast-in");
     el.classList.add("toast-out");
     setTimeout(() => el.remove(), 350);
-  }, 3000);
+  }, 4000);
 }
 
 export function animateCount(el, target, opts = {}) {

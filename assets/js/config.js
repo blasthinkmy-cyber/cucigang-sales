@@ -19,10 +19,11 @@ export const CONFIG = {
   WORKING_DAYS: 26,
   WORKING_HOURS: 9,
   REFRESH_SECONDS: 30,
-  VERSION: "1.0.0",
+  COMMISSION_RATE: 20, // percent of sales paid as commission
+  VERSION: "2.0.0",
 };
 
-// Performance Score status bands (Part 3, Section 12 of the PRD)
+// Performance Score status bands
 export const SCORE_BANDS = [
   { min: 95, label: "Elite", color: "elite", emoji: "🟢" },
   { min: 90, label: "Excellent", color: "excellent", emoji: "🔵" },
@@ -33,4 +34,20 @@ export const SCORE_BANDS = [
 
 export function getScoreBand(score) {
   return SCORE_BANDS.find((b) => score >= b.min) || SCORE_BANDS[SCORE_BANDS.length - 1];
+}
+
+// Coaching-alert thresholds — tune to taste in one place.
+export const ALERT_RULES = {
+  SALES_DROP_STREAK_DAYS: 3, // flag if sales fell for this many consecutive reported days
+  LOW_CONTACT_RATE: 35, // % — flag if an agent's contact rate falls below this
+  LOW_BOOKING_RATE_WITH_HIGH_CONNECTED: 15, // % — flag if booking rate is below this despite above-average connected volume
+};
+
+// Forecast-vs-target status bands
+export function projectionStatus(forecast, target) {
+  if (!target) return { label: "No Target Set", color: "average", emoji: "⚪" };
+  const ratio = forecast / target;
+  if (ratio >= 1) return { label: "On Track", color: "elite", emoji: "🟢" };
+  if (ratio >= 0.9) return { label: "At Risk", color: "average", emoji: "🟡" };
+  return { label: "Behind Target", color: "coaching", emoji: "🔴" };
 }

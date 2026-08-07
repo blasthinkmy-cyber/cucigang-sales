@@ -1,9 +1,9 @@
-# CUCIGANG Sales Performance Dashboard (CSPD)
+# CUCIGANG Sales Performance Dashboard (CSPD) — v2
 
-A telesales performance dashboard that replaces manual WhatsApp + Google
-Sheets reporting with a single interactive app: agents submit a daily
-report in under a minute, and managers get auto-calculated KPIs,
-leaderboards, and coaching signals.
+A telesales performance dashboard built on one principle: **input minimum,
+output maksimum**. Agents fill in 8 numbers a day; everything else —
+KPIs, commission, coaching alerts, forecasts — is calculated
+automatically.
 
 **This build runs immediately with no setup** — it ships with a mock
 data layer so you can open `index.html` and see a fully working app.
@@ -12,22 +12,30 @@ backend (steps below) and flip one flag.
 
 ---
 
+## What agents actually fill in
+
+```
+Date · Agent · Fresh Leads · Freezing Leads · Calls · Connected · Booking · Sales (RM)
+```
+
+That's it — 8 fields, under a minute. Everything below is derived.
+
 ## What's included
 
 ```
 /cspd
 ├── index.html          Landing page
-├── dashboard.html       Manager dashboard (KPIs, charts, leaderboard, table)
-├── report.html          Agent daily reporting form
+├── dashboard.html       Manager dashboard
+├── report.html          Agent daily reporting form (8 fields)
 ├── settings.html        Manager settings page
 ├── assets/
 │   ├── css/style.css     Design tokens + component styles
 │   └── js/
-│       ├── config.js      App configuration (edit API_URL here)
-│       ├── api.js         API layer — mock or real, same interface
+│       ├── config.js       App configuration (API_URL, commission rate, alert thresholds)
+│       ├── api.js          API layer — mock or real, same interface
 │       ├── store.js        Mock persistence (localStorage), stands in for Sheets
-│       ├── utils.js        Formatting + KPI formulas + mock data generator
-│       ├── charts.js       Chart.js builders
+│       ├── utils.js        Formatting + KPI formulas + coaching-alert rules + mock data
+│       ├── charts.js       Chart.js builders (Sales Trend + Agent Contribution)
 │       ├── layout.js       Dark mode, nav, header scroll behavior
 │       ├── dashboard.js     Dashboard page controller
 │       ├── report.js        Report page controller
@@ -35,18 +43,35 @@ backend (steps below) and flip one flag.
 └── gas/                  Google Apps Script backend (deploy to Sheets)
     ├── Code.gs            doGet/doPost router
     ├── Report.gs           submitReport(), getAgentsList()
-    ├── Dashboard.gs         getDashboard()
-    ├── Analytics.gs         KPI formulas, getLeaderboard(), getAgent()
+    ├── Dashboard.gs         getDashboard() — Executive Overview, funnel, projection, alerts
+    ├── Analytics.gs         KPI/commission formulas, getLeaderboard(), getAgent()
     ├── Settings.gs          getSettings(), updateSettings()
     ├── Validation.gs        Field + duplicate-report validation
     └── Utils.gs             Sheet helpers, logging
 ```
 
-## Tech stack
+## Dashboard sections
 
-Frontend: HTML5, Tailwind CSS (CDN), Vanilla JavaScript (ES modules),
-Chart.js, Lucide Icons, Inter (Google Fonts).
-Backend: Google Apps Script. Database: Google Sheets. Hosting: GitHub Pages.
+- **Executive Overview** — Today's Sales (with delta), Monthly Progress bar,
+  Forecast (🟢 On Track / 🟡 At Risk / 🔴 Behind Target), Need Per Day
+- **Team Health** — headcount by performance band (Elite/Excellent/Strong/Average/Coaching)
+- **KPI Cards** — Contact Rate, Booking Rate, Closing Rate, Avg Sales/Booking,
+  Performance Score, Report Submitted %
+- **Commission Estimator** — team month-to-date commission at the configured rate
+- **Sales Projection** — today's actual vs. need, and month-end forecast vs. target
+- **Sales Funnel** — Leads → Calls → Connected → Booking → Sales (month-to-date,
+  Fresh + Freezing combined — see note below)
+- **Coaching Alerts** (automatic) — sales dropping 3 days straight, contact rate
+  below 35%, or booking rate low despite above-average connected volume
+- **Leaderboard** — switchable by Sales / Contact Rate / Reporting % / Performance Score
+- **Agent modal** — commission, target progress, 30-day timeline, trend indicator
+
+> **Funnel note:** the 8-field form doesn't record calls/connected/booking
+> *per lead type*, so the funnel shows one combined Leads→Sales flow rather
+> than two separate Fresh/Freezing funnels. If you want true separate
+> funnels later, that needs 2 more fields (Fresh Calls, Freezing Calls) —
+> against the minimal-input principle, so it's left out unless you ask
+> for it.
 
 ## KPI formulas
 
@@ -56,26 +81,25 @@ Backend: Google Apps Script. Database: Google Sheets. Hosting: GitHub Pages.
 | Booking Rate | Booking ÷ Connected × 100 |
 | Closing Rate | Booking ÷ Connected × 100 |
 | Average Sale | Sales ÷ Booking |
+| Commission | Sales × Commission Rate |
 | Remaining Target | Monthly Target − Current Sales |
 | Need Per Day | Remaining Target ÷ Remaining Working Days |
 | Forecast | (Current Sales ÷ Days Passed) × Working Days |
+| Report Submitted % | Days Reported ÷ Working Days Passed |
 
 **Performance Score** (0–100): Sales 40% + Contact Rate 20% + Closing Rate
 20% + Booking 10% + Reporting Consistency 10%.
 95–100 🟢 Elite · 90–94 🔵 Excellent · 80–89 🟡 Strong · 70–79 🟠 Average · <70 🔴 Need Coaching
 
-> Note: the source spec defines Closing Rate and Booking Rate with the
-> same formula (Booking ÷ Connected). Both are implemented as written;
-> if you intend them to measure different things (e.g. Closing Rate =
-> Booking ÷ Follow-ups), update `closingRate()` in `utils.js` and
-> `closingRate_()` in `Analytics.gs`.
+**Coaching alert rules** (tune in `assets/js/config.js` → `ALERT_RULES`,
+and `gas/Analytics.gs` → `ALERT_RULES_`):
+- Sales fell on each of the last 3 reported days
+- Contact Rate below 35%
+- Booking Rate below 15% despite above-average Connected volume
 
 ---
 
 ## Running locally (mock mode — default)
-
-No install needed. Because the pages use ES modules (`type="module"`),
-open them through a local server rather than double-clicking the file:
 
 ```bash
 cd cspd
@@ -84,55 +108,56 @@ python3 -m http.server 8000
 ```
 
 Mock mode generates 30 days of realistic report data for 5 agents (Ali,
-Mira, Fatin, Aiman, Siti) on first load and stores it in
-`localStorage`, so submitting a report on the Daily Report page updates
-the dashboard immediately. Reset it anytime from **Settings → Reset
-demo data**.
+Mira, Fatin, Aiman, Siti) on first load and stores it in `localStorage`.
+Reset it anytime from **Settings → Reset demo data**.
 
 ---
 
 ## Going live with Google Sheets + Apps Script
 
 ### Step 1 — Create the spreadsheet
-Create a Google Sheet named **CUCIGANG SALES DATABASE** with 6 tabs,
-matching headers exactly:
+Create a Google Sheet with 4 tabs (or just upload the included
+`CUCIGANG_SALES_DATABASE.xlsx` and convert it to Sheets):
 
-**SETTINGS** (columns `KEY`, `VALUE`)
+**SETTINGS** (`KEY`, `VALUE`)
 ```
-Company Name   CUCIGANG
-Monthly Target 80000
-Working Days   26
-Working Hours  9
-Currency       RM
-Theme          Dark
+Company Name       CUCIGANG
+Monthly Target     80000
+Commission Rate    20
+Working Days       26
+Working Hours      9
+Currency           RM
+Theme              Dark
 Dashboard Refresh  30
 ```
 
-**AGENTS** (columns `ID`, `Agent`, `Phone`, `Team`, `Status`)
+**AGENTS** (`ID`, `Agent`, `Phone`, `Team`, `Status`, `Target`)
 ```
-AG001  Ali   0111111111  Alpha  Active
-AG002  Mira  0111111112  Alpha  Active
+AG001  Ali   0111111111  Alpha  Active  20000
+AG002  Mira  0111111112  Alpha  Active  16000
 ```
+`Target` is each agent's individual monthly target — leave blank to
+split the team target equally instead.
 
-**REPORTS** (columns `Date`, `Agent`, `Fresh`, `Freezing`, `Calls`,
-`Connected`, `Booking`, `Sales`, `Follow Up`, `No Answer`, `Rejected`,
-`Remarks`, `Timestamp`) — leave empty except the header row; the app
-writes to it.
+**REPORTS** (`Date`, `Agent`, `Fresh`, `Freezing`, `Calls`, `Connected`,
+`Booking`, `Sales`, `Timestamp`) — leave empty except the header row;
+the app writes to it.
 
-**SUMMARY**, **LEADERBOARD**, **LOGS** — create the tabs; they don't
-need headers, the app reads/writes via the API rather than sheet
-formulas.
+**LOGS** — just create the tab; the app writes to it.
 
 ### Step 2 — Add the Apps Script
-1. Open the Sheet → **Extensions → Apps Script**.
-2. Delete the default `Code.gs` content.
-3. Create each file in `/gas` (same filenames) and paste its contents.
+Open the Sheet → **Extensions → Apps Script** → delete the default
+`Code.gs` content → create each file in `/gas` (same filenames) and
+paste its contents.
 
 ### Step 3 — Deploy as a Web App
-1. **Deploy → New deployment → Web app**.
-2. Execute as: **Me**.
-3. Who has access: **Anyone** (or **Anyone with the link**).
-4. Click **Deploy** and copy the Web App URL.
+**Deploy → New deployment → Web app** → Execute as **Me** → Who has
+access **Anyone** → Deploy → copy the Web App URL.
+
+> If your dashboard shows a CORS error in the browser console, this
+> is almost always because "Who has access" is set to something other
+> than **Anyone** (e.g. "Anyone with Google account"). Re-check the
+> deployment settings and redeploy a **New version**.
 
 ### Step 4 — Connect the frontend
 In `assets/js/config.js`:
@@ -145,25 +170,22 @@ export const CONFIG = {
 ```
 
 ### Step 5 — Deploy to GitHub Pages
-1. Push the `cspd/` folder contents to a repo (e.g. `cucigang-sales-dashboard`).
-2. **Settings → Pages → Deploy from branch → main → /root**.
-3. Your app is live at `https://yourusername.github.io/cucigang-sales-dashboard/`.
+Push the contents of `cspd/` to a repo, then **Settings → Pages →
+Deploy from branch → main → /root**.
 
 ### Testing checklist
 - [ ] Submit a report from `report.html` — row appears in REPORTS
 - [ ] Duplicate agent+date submission is rejected
-- [ ] KPI cards on the dashboard update
-- [ ] Leaderboard sorts by sales, descending
-- [ ] Charts render for the last 14 days
-- [ ] Settings changes persist back to the SETTINGS sheet
-- [ ] Dashboard auto-refreshes every `Dashboard Refresh` seconds
-- [ ] Dark mode and mobile layout both work
+- [ ] Executive Overview, KPI cards, funnel, commission all update
+- [ ] Date picker changes the day the dashboard reflects
+- [ ] Coaching alerts appear when the rules are met
+- [ ] Leaderboard tabs (Sales/Contact Rate/Reporting/Performance) work
+- [ ] Clicking an agent name opens the modal with real data
+- [ ] Settings changes (incl. Commission Rate) persist back to the sheet
 
----
+## Intentionally left out
 
-## Notes on scope
-
-Per the PRD's "Future API" section, PDF/Excel export, WhatsApp/Telegram
-summaries, and email reports are intentionally not built — the API and
-folder structure leave room for them (`Utils.gs` is the natural home for
-an `exportPdf()`/`exportExcel()` function later).
+Per the minimal-input principle: Attendance, Product Performance,
+Product Category, Service Breakdown, manual Commission/KPI entry, and
+Team Schedule are not built — none of them help a manager make a daily
+call without adding agent typing.

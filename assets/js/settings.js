@@ -11,6 +11,7 @@ const fields = {
   companyName: "COMPANY_NAME",
   currency: "CURRENCY",
   monthlyTarget: "MONTHLY_TARGET",
+  commissionRate: "COMMISSION_RATE",
   workingDays: "WORKING_DAYS",
   workingHours: "WORKING_HOURS",
   refreshSeconds: "REFRESH_SECONDS",
@@ -32,7 +33,7 @@ const fields = {
           <div class="w-8 h-8 rounded-full bg-[#0057FF]/10 flex items-center justify-center text-xs font-semibold text-[#0057FF]">${a.name[0]}</div>
           <div>
             <p class="text-sm font-medium">${a.name}</p>
-            <p class="text-xs text-[var(--color-text-soft)]">${a.id} · Team ${a.team}</p>
+            <p class="text-xs text-[var(--color-text-soft)]">${a.id} · Team ${a.team}${a.target ? ` · Target RM${Number(a.target).toLocaleString()}` : ""}</p>
           </div>
         </div>
         <span class="chip chip-excellent">Active</span>
@@ -46,7 +47,7 @@ document.getElementById("settingsForm").addEventListener("submit", async (e) => 
   const partial = {};
   Object.entries(fields).forEach(([elId, key]) => {
     const val = document.getElementById(elId).value;
-    partial[key] = ["MONTHLY_TARGET", "WORKING_DAYS", "WORKING_HOURS", "REFRESH_SECONDS"].includes(key)
+    partial[key] = ["MONTHLY_TARGET", "WORKING_DAYS", "WORKING_HOURS", "REFRESH_SECONDS", "COMMISSION_RATE"].includes(key)
       ? Number(val)
       : val;
   });

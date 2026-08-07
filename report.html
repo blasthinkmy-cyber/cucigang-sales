@@ -12,7 +12,7 @@
 </head>
 <body data-page="report" class="min-h-screen">
 
-<header class="px-5 md:px-8 py-5 flex items-center justify-between max-w-2xl mx-auto">
+<header class="px-5 md:px-8 py-5 flex items-center justify-between max-w-xl mx-auto">
   <a href="index.html" class="flex items-center gap-2">
     <div class="w-9 h-9 rounded-xl bg-[#0057FF] flex items-center justify-center text-white font-bold">C</div>
     <span class="font-semibold text-sm">CUCIGANG</span>
@@ -22,20 +22,20 @@
   </button>
 </header>
 
-<main class="max-w-2xl mx-auto px-5 md:px-8 pb-20">
+<main class="max-w-xl mx-auto px-5 md:px-8 pb-20">
   <div class="mb-6 fade-in">
     <h1 class="text-2xl font-bold mb-1">Daily Sales Reporting</h1>
-    <p class="text-sm text-[var(--color-text-soft)]">Takes less than a minute. Submit once per day per agent.</p>
+    <p class="text-sm text-[var(--color-text-soft)]">8 medan je. Kurang dari seminit. Sistem kira semua KPI automatik.</p>
   </div>
 
   <form id="reportForm" class="card rounded-[var(--radius-card)] p-6 md:p-8 space-y-5 fade-in">
     <div class="grid grid-cols-2 gap-4">
       <div class="col-span-1">
-        <label class="block text-xs font-medium mb-1.5 text-[var(--color-text-soft)]">Agent</label>
+        <label class="block text-xs font-medium mb-1.5 text-[var(--color-text-soft)]">Nama Agent</label>
         <select id="agent" required class="w-full px-4 py-3 text-sm"></select>
       </div>
       <div class="col-span-1">
-        <label class="block text-xs font-medium mb-1.5 text-[var(--color-text-soft)]">Date</label>
+        <label class="block text-xs font-medium mb-1.5 text-[var(--color-text-soft)]">Tarikh</label>
         <input id="date" type="date" required class="w-full px-4 py-3 text-sm" />
       </div>
     </div>
@@ -43,14 +43,14 @@
     <div class="grid grid-cols-2 gap-4">
       <div>
         <label class="block text-xs font-medium mb-1.5 text-[var(--color-text-soft)]">Fresh Leads</label>
-        <input id="fresh" type="number" min="0" class="w-full px-4 py-3 text-sm" placeholder="0" />
+        <input id="fresh" type="number" min="0" required class="w-full px-4 py-3 text-sm" placeholder="0" />
       </div>
       <div>
         <label class="block text-xs font-medium mb-1.5 text-[var(--color-text-soft)]">Freezing Leads</label>
-        <input id="freezing" type="number" min="0" class="w-full px-4 py-3 text-sm" placeholder="0" />
+        <input id="freezing" type="number" min="0" required class="w-full px-4 py-3 text-sm" placeholder="0" />
       </div>
       <div>
-        <label class="block text-xs font-medium mb-1.5 text-[var(--color-text-soft)]">Calls Made</label>
+        <label class="block text-xs font-medium mb-1.5 text-[var(--color-text-soft)]">Jumlah Call</label>
         <input id="calls" type="number" min="0" required class="w-full px-4 py-3 text-sm" placeholder="0" />
       </div>
       <div>
@@ -65,23 +65,6 @@
         <label class="block text-xs font-medium mb-1.5 text-[var(--color-text-soft)]">Sales (RM)</label>
         <input id="sales" type="number" min="0" required class="w-full px-4 py-3 text-sm" placeholder="0" />
       </div>
-      <div>
-        <label class="block text-xs font-medium mb-1.5 text-[var(--color-text-soft)]">Follow Up</label>
-        <input id="followup" type="number" min="0" class="w-full px-4 py-3 text-sm" placeholder="0" />
-      </div>
-      <div>
-        <label class="block text-xs font-medium mb-1.5 text-[var(--color-text-soft)]">No Answer</label>
-        <input id="noanswer" type="number" min="0" class="w-full px-4 py-3 text-sm" placeholder="0" />
-      </div>
-      <div>
-        <label class="block text-xs font-medium mb-1.5 text-[var(--color-text-soft)]">Rejected</label>
-        <input id="rejected" type="number" min="0" class="w-full px-4 py-3 text-sm" placeholder="0" />
-      </div>
-    </div>
-
-    <div>
-      <label class="block text-xs font-medium mb-1.5 text-[var(--color-text-soft)]">Remarks</label>
-      <textarea id="remarks" rows="3" class="w-full px-4 py-3 text-sm resize-none" placeholder="Anything the manager should know..."></textarea>
     </div>
 
     <p id="formError" class="hidden text-sm text-[#EF4444] bg-[#EF4444]/10 rounded-xl px-4 py-3"></p>

@@ -1,6 +1,6 @@
 import { initTheme, toggleTheme } from "./layout.js";
 import { API } from "./api.js";
-import { isoDate, toast } from "./utils.js";
+import { isoDate } from "./utils.js";
 
 initTheme();
 lucide.createIcons();
@@ -14,7 +14,7 @@ dateInput.max = isoDate(new Date());
   const { agents } = await API.getAgentsList();
   const select = document.getElementById("agent");
   select.innerHTML =
-    `<option value="" disabled selected>Select agent</option>` +
+    `<option value="" disabled selected>Pilih agent</option>` +
     agents.map((a) => `<option value="${a.name}">${a.name}</option>`).join("");
 })();
 
@@ -28,16 +28,12 @@ form.addEventListener("submit", async (e) => {
   const payload = {
     name: document.getElementById("agent").value,
     date: document.getElementById("date").value,
-    fresh: document.getElementById("fresh").value || 0,
-    freezing: document.getElementById("freezing").value || 0,
+    fresh: document.getElementById("fresh").value,
+    freezing: document.getElementById("freezing").value,
     calls: document.getElementById("calls").value,
     connected: document.getElementById("connected").value,
     booking: document.getElementById("booking").value,
     sales: document.getElementById("sales").value,
-    followup: document.getElementById("followup").value || 0,
-    noanswer: document.getElementById("noanswer").value || 0,
-    rejected: document.getElementById("rejected").value || 0,
-    remarks: document.getElementById("remarks").value || "",
   };
 
   const submitBtn = form.querySelector("button[type=submit]");

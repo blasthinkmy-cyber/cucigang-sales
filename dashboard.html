@@ -32,12 +32,15 @@
     <a href="dashboard.html#leaderboard" data-nav-link="leaderboard" class="sidebar-link flex items-center gap-3 px-3 py-2.5 text-sm">
       <i data-lucide="trophy" class="w-4 h-4"></i> Leaderboard
     </a>
+    <a href="dashboard.html#coaching" data-nav-link="coaching" class="sidebar-link flex items-center gap-3 px-3 py-2.5 text-sm">
+      <i data-lucide="alert-triangle" class="w-4 h-4"></i> Coaching Alerts
+    </a>
     <a href="settings.html" data-nav-link="settings" class="sidebar-link flex items-center gap-3 px-3 py-2.5 text-sm">
       <i data-lucide="settings" class="w-4 h-4"></i> Settings
     </a>
   </nav>
   <div class="mt-auto px-2">
-    <p class="text-[11px] text-[var(--color-text-soft)]">v1.0.0 · Mock data mode</p>
+    <p class="text-[11px] text-[var(--color-text-soft)]">v2.0.0 · Mock data mode</p>
   </div>
 </aside>
 
@@ -59,9 +62,6 @@
         <input id="viewDate" type="date" class="!border-0 !shadow-none !p-0 !bg-transparent text-xs font-medium w-[112px]" />
       </div>
       <button id="jumpToday" class="hidden sm:inline-flex btn px-3 py-2 text-xs font-semibold card card-hover">Today</button>
-      <button class="w-9 h-9 rounded-full flex items-center justify-center card card-hover" title="Notifications">
-        <i data-lucide="bell" class="w-4 h-4"></i>
-      </button>
       <button id="themeToggle" class="w-9 h-9 rounded-full flex items-center justify-center card card-hover" title="Toggle dark mode">
         <i data-lucide="moon" data-theme-icon class="w-4 h-4"></i>
       </button>
@@ -84,60 +84,125 @@
 
   <main class="px-5 md:px-8 pt-6 max-w-[1400px] mx-auto">
 
-    <!-- ============ MANAGER EXECUTIVE SUMMARY (Bonus panel) ============ -->
-    <section class="card rounded-[var(--radius-card)] p-6 mb-6 fade-in" style="background: linear-gradient(135deg, var(--color-dark), #1e293b); color: white; border: none;">
-      <div class="flex items-center gap-2 mb-4">
-        <i data-lucide="zap" class="w-4 h-4 text-[#FFB200]"></i>
-        <p class="text-xs font-bold tracking-widest uppercase text-white/70" id="execSummaryTitle">Today at a Glance</p>
+    <!-- ============ EXECUTIVE OVERVIEW ============ -->
+    <section class="mb-6">
+      <p class="text-xs font-bold tracking-widest uppercase text-[var(--color-text-soft)] mb-3" id="execOverviewTitle">📊 Executive Overview</p>
+      <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        <div class="card card-hover rounded-[var(--radius-card)] p-5" id="ovSales">
+          <p class="text-xs text-[var(--color-text-soft)] mb-2" id="ovSalesLabel">Today's Sales</p>
+          <p class="text-2xl font-bold" data-value>—</p>
+          <p class="text-xs mt-1 font-medium" data-delta></p>
+        </div>
+        <div class="card card-hover rounded-[var(--radius-card)] p-5">
+          <p class="text-xs text-[var(--color-text-soft)] mb-2">Monthly Progress</p>
+          <p class="text-base font-bold mb-2"><span id="ovMpCurrent">—</span> <span class="text-[var(--color-text-soft)] font-medium">/ <span id="ovMpTarget">—</span></span></p>
+          <div class="progress-track h-2 mb-1"><div class="progress-fill" id="ovMpBar" style="width:0%"></div></div>
+          <p class="text-xs font-semibold text-[var(--color-text-soft)]" id="ovMpPercent">0%</p>
+        </div>
+        <div class="card card-hover rounded-[var(--radius-card)] p-5">
+          <p class="text-xs text-[var(--color-text-soft)] mb-2">Forecast</p>
+          <p class="text-2xl font-bold" id="ovForecast">—</p>
+          <span class="chip mt-1" id="ovForecastStatus">—</span>
+        </div>
+        <div class="card card-hover rounded-[var(--radius-card)] p-5">
+          <p class="text-xs text-[var(--color-text-soft)] mb-2">Need Per Day</p>
+          <p class="text-2xl font-bold" id="ovNeedPerDay">—</p>
+        </div>
       </div>
-      <div id="execSummary" class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-        <div class="skeleton h-14"></div><div class="skeleton h-14"></div>
-        <div class="skeleton h-14"></div><div class="skeleton h-14"></div>
+    </section>
+
+    <!-- ============ TEAM HEALTH ============ -->
+    <section class="card rounded-[var(--radius-card)] p-6 mb-6">
+      <p class="text-sm font-semibold mb-4">Team Health <span class="text-[var(--color-text-soft)] font-normal">· this month</span></p>
+      <div id="teamHealth" class="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div class="skeleton h-16"></div><div class="skeleton h-16"></div><div class="skeleton h-16"></div>
       </div>
     </section>
 
     <!-- ============ KPI CARDS ============ -->
-    <section class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
-      <div class="card card-hover rounded-[var(--radius-card)] p-5" id="kpiSales">
-        <p class="text-xs text-[var(--color-text-soft)] mb-2" id="kpiSalesLabel">Today's Sales</p>
-        <p class="text-2xl font-bold" data-value>—</p>
-        <p class="text-xs mt-1 font-medium" data-delta></p>
-      </div>
+    <section class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
       <div class="card card-hover rounded-[var(--radius-card)] p-5">
         <p class="text-xs text-[var(--color-text-soft)] mb-2">Contact Rate</p>
-        <p class="text-2xl font-bold" id="kpiContact">—</p>
+        <p class="text-xl font-bold" id="kpiContact">—</p>
+      </div>
+      <div class="card card-hover rounded-[var(--radius-card)] p-5">
+        <p class="text-xs text-[var(--color-text-soft)] mb-2">Booking Rate</p>
+        <p class="text-xl font-bold" id="kpiBookingRate">—</p>
       </div>
       <div class="card card-hover rounded-[var(--radius-card)] p-5">
         <p class="text-xs text-[var(--color-text-soft)] mb-2">Closing Rate</p>
-        <p class="text-2xl font-bold" id="kpiClosing">—</p>
+        <p class="text-xl font-bold" id="kpiClosing">—</p>
       </div>
       <div class="card card-hover rounded-[var(--radius-card)] p-5">
-        <p class="text-xs text-[var(--color-text-soft)] mb-2">Booking</p>
-        <p class="text-2xl font-bold" id="kpiBooking">—</p>
+        <p class="text-xs text-[var(--color-text-soft)] mb-2">Avg Sales / Booking</p>
+        <p class="text-xl font-bold" id="kpiAvgSale">—</p>
       </div>
       <div class="card card-hover rounded-[var(--radius-card)] p-5">
         <p class="text-xs text-[var(--color-text-soft)] mb-2">Performance</p>
-        <p class="text-2xl font-bold" id="kpiPerformance">—</p>
+        <p class="text-xl font-bold" id="kpiPerformance">—</p>
+      </div>
+      <div class="card card-hover rounded-[var(--radius-card)] p-5">
+        <p class="text-xs text-[var(--color-text-soft)] mb-2">Report Submitted</p>
+        <p class="text-xl font-bold" id="kpiReportSubmitted">—</p>
       </div>
     </section>
 
-    <!-- ============ MONTHLY PROGRESS ============ -->
+    <!-- ============ COMMISSION + PROJECTION ============ -->
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+      <div class="card rounded-[var(--radius-card)] p-6" style="background: linear-gradient(135deg, var(--color-dark), #1e293b); color: white; border: none;">
+        <div class="flex items-center gap-2 mb-4">
+          <i data-lucide="wallet" class="w-4 h-4 text-[#FFB200]"></i>
+          <p class="text-xs font-bold tracking-widest uppercase text-white/70">Estimated Commission (Team · MTD)</p>
+        </div>
+        <div class="flex items-end justify-between">
+          <div>
+            <p class="text-2xl font-bold" id="commSales">—</p>
+            <p class="text-xs text-white/50">Sales</p>
+          </div>
+          <p class="text-xl text-white/40 pb-1">=</p>
+          <div class="text-right">
+            <p class="text-2xl font-bold text-[#16C47F]" id="commAmount">—</p>
+            <p class="text-xs text-white/50" id="commRateLabel">Commission</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card rounded-[var(--radius-card)] p-6">
+        <div class="flex items-center gap-2 mb-4">
+          <i data-lucide="target" class="w-4 h-4 text-[#0057FF]"></i>
+          <p class="text-xs font-bold tracking-widest uppercase text-[var(--color-text-soft)]">Sales Projection</p>
+        </div>
+        <div class="grid grid-cols-3 gap-3 mb-4">
+          <div>
+            <p class="text-[11px] text-[var(--color-text-soft)]">Hari ini</p>
+            <p class="font-bold" id="projActual">—</p>
+          </div>
+          <div>
+            <p class="text-[11px] text-[var(--color-text-soft)]">Perlu</p>
+            <p class="font-bold" id="projNeed">—</p>
+          </div>
+          <div>
+            <p class="text-[11px] text-[var(--color-text-soft)]">Kurang</p>
+            <p class="font-bold" id="projGap">—</p>
+          </div>
+        </div>
+        <div class="border-t border-[var(--color-border)] pt-4">
+          <p class="text-xs text-[var(--color-text-soft)] mb-1">Jika team kekalkan pace sekarang</p>
+          <div class="flex items-center justify-between">
+            <p class="font-bold text-lg" id="projForecast">—</p>
+            <span class="chip" id="projStatus">—</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FUNNEL ============ -->
     <section class="card rounded-[var(--radius-card)] p-6 mb-6">
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-        <div>
-          <p class="text-xs text-[var(--color-text-soft)] mb-1">Monthly Progress</p>
-          <p class="text-lg font-bold"><span id="mpCurrent">—</span> <span class="text-[var(--color-text-soft)] font-medium">/ <span id="mpTarget">—</span></span></p>
-        </div>
-        <div class="flex gap-6 text-sm">
-          <div><p class="text-[var(--color-text-soft)] text-xs">Remaining</p><p class="font-semibold" id="mpRemaining">—</p></div>
-          <div><p class="text-[var(--color-text-soft)] text-xs">Need / Day</p><p class="font-semibold" id="mpNeedPerDay">—</p></div>
-          <div><p class="text-[var(--color-text-soft)] text-xs">Forecast</p><p class="font-semibold" id="mpForecast">—</p></div>
-        </div>
+      <p class="text-sm font-semibold mb-1">Sales Funnel <span class="text-[var(--color-text-soft)] font-normal">· month-to-date, Fresh + Freezing combined</span></p>
+      <p class="text-xs text-[var(--color-text-soft)] mb-5">Nampak dekat mana bocor — dari leads sampai closing.</p>
+      <div id="funnel" class="grid grid-cols-5 gap-2 md:gap-3">
+        <div class="skeleton h-24"></div><div class="skeleton h-24"></div><div class="skeleton h-24"></div><div class="skeleton h-24"></div><div class="skeleton h-24"></div>
       </div>
-      <div class="progress-track h-3">
-        <div class="progress-fill" id="mpBar" style="width:0%"></div>
-      </div>
-      <p class="text-right text-xs font-semibold mt-2" id="mpPercent">0%</p>
     </section>
 
     <!-- ============ CHARTS ============ -->
@@ -157,25 +222,32 @@
         <p class="text-sm font-semibold mb-4">Agent Contribution</p>
         <div class="h-64"><canvas id="contributionChart"></canvas></div>
       </div>
-      <div class="card rounded-[var(--radius-card)] p-6">
-        <p class="text-sm font-semibold mb-4">Contact Rate</p>
-        <div class="h-56"><canvas id="contactRateChart"></canvas></div>
+    </section>
+
+    <!-- ============ COACHING ALERTS ============ -->
+    <section id="coaching" class="card rounded-[var(--radius-card)] p-6 mb-6 scroll-mt-24">
+      <div class="flex items-center gap-2 mb-5">
+        <i data-lucide="alert-triangle" class="w-4 h-4 text-[#EF4444]"></i>
+        <p class="text-sm font-semibold">Coaching Alerts <span class="text-[var(--color-text-soft)] font-normal">· automatic</span></p>
       </div>
-      <div class="card rounded-[var(--radius-card)] p-6">
-        <p class="text-sm font-semibold mb-4">Closing Rate</p>
-        <div class="h-56"><canvas id="closingRateChart"></canvas></div>
-      </div>
-      <div class="card rounded-[var(--radius-card)] p-6">
-        <p class="text-sm font-semibold mb-4">Booking Trend</p>
-        <div class="h-56"><canvas id="bookingTrendChart"></canvas></div>
+      <div id="coachingAlerts" class="space-y-2">
+        <div class="skeleton h-14"></div>
       </div>
     </section>
 
     <!-- ============ LEADERBOARD ============ -->
     <section id="leaderboard" class="card rounded-[var(--radius-card)] p-6 mb-6 scroll-mt-24">
-      <div class="flex items-center gap-2 mb-5">
-        <i data-lucide="trophy" class="w-4 h-4 text-[#FFB200]"></i>
-        <p class="text-sm font-semibold">Leaderboard <span class="text-[var(--color-text-soft)] font-normal">· this month</span></p>
+      <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="trophy" class="w-4 h-4 text-[#FFB200]"></i>
+          <p class="text-sm font-semibold">Leaderboard <span class="text-[var(--color-text-soft)] font-normal">· this month</span></p>
+        </div>
+        <div id="lbTabs" class="flex items-center gap-1 bg-[var(--color-bg)] rounded-full p-1 flex-wrap">
+          <button data-lb="sales" class="lb-tab px-3 py-1.5 rounded-full text-xs font-semibold">🏆 Sales</button>
+          <button data-lb="contactRate" class="lb-tab px-3 py-1.5 rounded-full text-xs font-semibold">☎ Contact Rate</button>
+          <button data-lb="reportSubmittedPct" class="lb-tab px-3 py-1.5 rounded-full text-xs font-semibold">📅 Reporting</button>
+          <button data-lb="score" class="lb-tab px-3 py-1.5 rounded-full text-xs font-semibold">🎯 Performance</button>
+        </div>
       </div>
       <div id="leaderboardList" class="space-y-2">
         <div class="skeleton h-16"></div><div class="skeleton h-16"></div><div class="skeleton h-16"></div>
@@ -185,7 +257,7 @@
     <!-- ============ PERFORMANCE TABLE ============ -->
     <section class="card rounded-[var(--radius-card)] p-6 mb-6 overflow-x-auto">
       <p class="text-sm font-semibold mb-5">Agent Performance <span class="text-[var(--color-text-soft)] font-normal">· this month</span></p>
-      <table class="w-full text-sm min-w-[720px]">
+      <table class="w-full text-sm min-w-[760px]">
         <thead>
           <tr class="text-left text-xs text-[var(--color-text-soft)] uppercase tracking-wide">
             <th class="pb-3 font-medium">Agent</th>
@@ -193,12 +265,13 @@
             <th class="pb-3 font-medium">Connected</th>
             <th class="pb-3 font-medium">Booking</th>
             <th class="pb-3 font-medium">Sales</th>
+            <th class="pb-3 font-medium">Commission</th>
             <th class="pb-3 font-medium">Performance</th>
             <th class="pb-3 font-medium">Status</th>
           </tr>
         </thead>
         <tbody id="perfTableBody">
-          <tr><td colspan="7" class="py-6"><div class="skeleton h-10"></div></td></tr>
+          <tr><td colspan="8" class="py-6"><div class="skeleton h-10"></div></td></tr>
         </tbody>
       </table>
     </section>
@@ -206,7 +279,7 @@
   </main>
 </div>
 
-<!-- ============ AGENT DETAIL MODAL (bonus: performance timeline) ============ -->
+<!-- ============ AGENT DETAIL MODAL ============ -->
 <div id="agentModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
   <div class="modal-backdrop absolute inset-0" data-modal-close></div>
   <div class="modal-panel card relative w-full max-w-lg max-h-[85vh] overflow-y-auto p-6 z-10">

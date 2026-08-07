@@ -8,19 +8,14 @@ const PALETTE = {
   info: "#06B6D4",
 };
 
-let salesChart, contactChart, closingChart, bookingChart, contributionChart;
+let salesChart, contributionChart;
 
 function baseGrid(isDark) {
-  return {
-    color: isDark ? "rgba(255,255,255,.06)" : "rgba(15,23,42,.06)",
-  };
+  return { color: isDark ? "rgba(255,255,255,.06)" : "rgba(15,23,42,.06)" };
 }
 
 function baseTicks(isDark) {
-  return {
-    color: isDark ? "rgba(255,255,255,.5)" : "rgba(15,23,42,.5)",
-    font: { family: "Inter", size: 11 },
-  };
+  return { color: isDark ? "rgba(255,255,255,.5)" : "rgba(15,23,42,.5)", font: { family: "Inter", size: 11 } };
 }
 
 export function renderCharts(data, isDark) {
@@ -45,61 +40,6 @@ export function renderCharts(data, isDark) {
       ],
     },
     options: lineOptions(isDark, (v) => "RM" + v.toLocaleString()),
-  });
-
-  contactChart = upsertChart(contactChart, "contactRateChart", {
-    type: "line",
-    data: {
-      labels,
-      datasets: [
-        {
-          label: "Contact Rate",
-          data: data.contact,
-          borderColor: PALETTE.info,
-          backgroundColor: gradient("contactRateChart", PALETTE.info),
-          fill: true,
-          tension: 0.4,
-          pointRadius: 0,
-          pointHoverRadius: 5,
-          borderWidth: 2.5,
-        },
-      ],
-    },
-    options: lineOptions(isDark, (v) => v + "%"),
-  });
-
-  closingChart = upsertChart(closingChart, "closingRateChart", {
-    type: "bar",
-    data: {
-      labels,
-      datasets: [
-        {
-          label: "Closing Rate",
-          data: data.closing,
-          backgroundColor: PALETTE.warning,
-          borderRadius: 6,
-          maxBarThickness: 18,
-        },
-      ],
-    },
-    options: lineOptions(isDark, (v) => v + "%"),
-  });
-
-  bookingChart = upsertChart(bookingChart, "bookingTrendChart", {
-    type: "bar",
-    data: {
-      labels,
-      datasets: [
-        {
-          label: "Bookings",
-          data: data.booking,
-          backgroundColor: PALETTE.success,
-          borderRadius: 6,
-          maxBarThickness: 18,
-        },
-      ],
-    },
-    options: lineOptions(isDark, (v) => v),
   });
 
   const contribColors = [PALETTE.primary, PALETTE.success, PALETTE.warning, PALETTE.info, PALETTE.danger];
@@ -167,9 +107,7 @@ function tooltipOpts(isDark, formatter) {
     padding: 10,
     cornerRadius: 10,
     displayColors: false,
-    callbacks: {
-      label: (ctx) => (formatter ? formatter(ctx.raw) : ctx.raw),
-    },
+    callbacks: { label: (ctx) => (formatter ? formatter(ctx.raw) : ctx.raw) },
   };
 }
 
@@ -178,10 +116,7 @@ function lineOptions(isDark, formatter) {
     responsive: true,
     maintainAspectRatio: false,
     interaction: { mode: "index", intersect: false },
-    plugins: {
-      legend: { display: false },
-      tooltip: tooltipOpts(isDark, formatter),
-    },
+    plugins: { legend: { display: false }, tooltip: tooltipOpts(isDark, formatter) },
     scales: {
       x: { grid: { display: false }, ticks: baseTicks(isDark) },
       y: { grid: baseGrid(isDark), ticks: { ...baseTicks(isDark), callback: formatter } },
