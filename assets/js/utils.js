@@ -44,8 +44,11 @@ export function contactRate(connected, calls) {
 export function bookingRate(booking, connected) {
   return connected > 0 ? (booking / connected) * 100 : 0;
 }
-export function closingRate(booking, connected) {
-  return connected > 0 ? (booking / connected) * 100 : 0;
+export function interestRate(interested, connected) {
+  return connected > 0 ? (interested / connected) * 100 : 0;
+}
+export function closingRate(booking, interested) {
+  return interested > 0 ? (booking / interested) * 100 : 0;
 }
 export function averageTicket(sales, booking) {
   return booking > 0 ? sales / booking : 0;
@@ -149,8 +152,8 @@ export const AGENTS = [
   { id: "AG005", name: "Siti", team: "Bravo", skill: 0.55, target: 12000 },
 ];
 
-// Generates N days of REPORTS rows — the simplified 8-field schema:
-// Date | Agent | Fresh | Freezing | Calls | Connected | Booking | Sales
+// Generates N days of REPORTS rows — the 9-field schema:
+// Date | Agent | Fresh | Freezing | Calls | Connected | Interested | Booking | Sales
 export function generateMockReports(days = 30) {
   const rows = [];
   const today = new Date();
@@ -164,7 +167,8 @@ export function generateMockReports(days = 30) {
       const rnd = mulberry32(iso.split("-").join("") * 1 + idx * 97);
       const calls = Math.round(40 + rnd() * 35);
       const connected = Math.round(calls * (0.3 + agent.skill * 0.25 + rnd() * 0.07));
-      const booking = Math.round(connected * (0.12 + agent.skill * 0.18 + rnd() * 0.05));
+      const interested = Math.round(connected * (0.35 + agent.skill * 0.25 + rnd() * 0.08));
+      const booking = Math.round(interested * (0.25 + agent.skill * 0.25 + rnd() * 0.06));
       const avgTicket = 150 + agent.skill * 110 + rnd() * 40;
       const sales = Math.round(booking * avgTicket);
       const fresh = Math.round(30 + rnd() * 40);
@@ -178,6 +182,7 @@ export function generateMockReports(days = 30) {
         freezing,
         calls,
         connected,
+        interested,
         booking,
         sales,
         timestamp: `${iso}T${9 + (idx % 6)}:${(10 + idx * 7) % 60}:00`,
@@ -192,13 +197,14 @@ export function sumReports(rows) {
     (acc, r) => {
       acc.calls += r.calls;
       acc.connected += r.connected;
+      acc.interested += r.interested || 0;
       acc.booking += r.booking;
       acc.sales += r.sales;
       acc.fresh += r.fresh;
       acc.freezing += r.freezing;
       return acc;
     },
-    { calls: 0, connected: 0, booking: 0, sales: 0, fresh: 0, freezing: 0 }
+    { calls: 0, connected: 0, interested: 0, booking: 0, sales: 0, fresh: 0, freezing: 0 }
   );
 }
 

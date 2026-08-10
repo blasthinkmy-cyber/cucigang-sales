@@ -128,6 +128,7 @@ function renderTeamHealth(teamHealth) {
 function renderKpis(data) {
   const { kpi } = data;
   document.getElementById("kpiContact").textContent = pct(kpi.contactRate);
+  document.getElementById("kpiInterest").textContent = pct(kpi.interestRate);
   document.getElementById("kpiBookingRate").textContent = pct(kpi.bookingRate);
   document.getElementById("kpiClosing").textContent = pct(kpi.closingRate);
   document.getElementById("kpiAvgSale").textContent = money(kpi.avgSale);
@@ -146,12 +147,13 @@ function renderFunnel(funnel) {
     { label: "Leads", value: funnel.leads, icon: "👥" },
     { label: "Call", value: funnel.calls, icon: "📞" },
     { label: "Connected", value: funnel.connected, icon: "🔗" },
+    { label: "Berminat", value: funnel.interested, icon: "🙋" },
     { label: "Booking", value: funnel.booking, icon: "📅" },
     { label: "Sales", value: null, money: funnel.sales, icon: "💰" },
   ];
   const el = document.getElementById("funnel");
   el.className = "grid gap-1 md:gap-2 items-center";
-  el.style.gridTemplateColumns = "repeat(9, minmax(0,1fr))";
+  el.style.gridTemplateColumns = `repeat(${stages.length * 3 - 1}, minmax(0,1fr))`;
   const parts = [];
   stages.forEach((s, i) => {
     const prev = i > 0 ? stages[i - 1].value : null;
@@ -241,6 +243,7 @@ function renderTable(list) {
         <td class="py-3.5 font-medium">${a.agent}</td>
         <td class="py-3.5 text-[var(--color-text-soft)]">${a.calls}</td>
         <td class="py-3.5 text-[var(--color-text-soft)]">${a.connected}</td>
+        <td class="py-3.5 text-[var(--color-text-soft)]">${a.interested}</td>
         <td class="py-3.5 text-[var(--color-text-soft)]">${a.booking}</td>
         <td class="py-3.5 font-medium">${money(a.sales)}</td>
         <td class="py-3.5 text-[#16C47F] font-medium">${money(a.commission)}</td>
@@ -314,6 +317,7 @@ async function openAgentModal(name) {
     <div class="grid grid-cols-3 gap-3 mb-6">
       <div class="card rounded-2xl p-3.5"><p class="text-[11px] text-[var(--color-text-soft)]">Calls</p><p class="font-bold">${stats.calls}</p></div>
       <div class="card rounded-2xl p-3.5"><p class="text-[11px] text-[var(--color-text-soft)]">Connected</p><p class="font-bold">${stats.connected}</p></div>
+      <div class="card rounded-2xl p-3.5"><p class="text-[11px] text-[var(--color-text-soft)]">Berminat</p><p class="font-bold">${stats.interested}</p></div>
       <div class="card rounded-2xl p-3.5"><p class="text-[11px] text-[var(--color-text-soft)]">Booking</p><p class="font-bold">${stats.booking}</p></div>
       <div class="card rounded-2xl p-3.5"><p class="text-[11px] text-[var(--color-text-soft)]">Contact Rate</p><p class="font-bold">${pct(stats.contactRate)}</p></div>
       <div class="card rounded-2xl p-3.5"><p class="text-[11px] text-[var(--color-text-soft)]">Closing Rate</p><p class="font-bold">${pct(stats.closingRate)}</p></div>
@@ -367,13 +371,17 @@ async function load() {
   renderCoachingAlerts(data.coachingAlerts);
   renderCharts(data.chart, document.documentElement.classList.contains("dark"));
 
+  const isToday = viewDate === todayStr;
+  document.getElementById("perfTableTitle").innerHTML =
+    `Agent Performance <span class="text-[var(--color-text-soft)] font-normal">· ${isToday ? "hari ini" : dateLabel(viewDate)}</span>`;
+  renderTable([...data.perAgentToday].sort((a, b) => b.sales - a.sales));
+
   const leaderboardRes = await API.getLeaderboard({ date: viewDate });
   if (leaderboardRes.status !== "success") {
     toast(leaderboardRes.message || "Failed to load leaderboard", "error");
     return;
   }
   renderLeaderboard(leaderboardRes.leaderboard);
-  renderTable([...leaderboardRes.leaderboard].sort((a, b) => b.sales - a.sales));
   lucide.createIcons();
 }
 

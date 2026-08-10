@@ -120,10 +120,14 @@
     </section>
 
     <!-- ============ KPI CARDS ============ -->
-    <section class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+    <section class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-4 mb-6">
       <div class="card card-hover rounded-[var(--radius-card)] p-5">
         <p class="text-xs text-[var(--color-text-soft)] mb-2">Contact Rate</p>
         <p class="text-xl font-bold" id="kpiContact">—</p>
+      </div>
+      <div class="card card-hover rounded-[var(--radius-card)] p-5">
+        <p class="text-xs text-[var(--color-text-soft)] mb-2">Interest Rate</p>
+        <p class="text-xl font-bold" id="kpiInterest">—</p>
       </div>
       <div class="card card-hover rounded-[var(--radius-card)] p-5">
         <p class="text-xs text-[var(--color-text-soft)] mb-2">Booking Rate</p>
@@ -256,13 +260,14 @@
 
     <!-- ============ PERFORMANCE TABLE ============ -->
     <section class="card rounded-[var(--radius-card)] p-6 mb-6 overflow-x-auto">
-      <p class="text-sm font-semibold mb-5">Agent Performance <span class="text-[var(--color-text-soft)] font-normal">· this month</span></p>
-      <table class="w-full text-sm min-w-[760px]">
+      <p class="text-sm font-semibold mb-5" id="perfTableTitle">Agent Performance <span class="text-[var(--color-text-soft)] font-normal">· hari ini</span></p>
+      <table class="w-full text-sm min-w-[860px]">
         <thead>
           <tr class="text-left text-xs text-[var(--color-text-soft)] uppercase tracking-wide">
             <th class="pb-3 font-medium">Agent</th>
             <th class="pb-3 font-medium">Calls</th>
             <th class="pb-3 font-medium">Connected</th>
+            <th class="pb-3 font-medium">Berminat</th>
             <th class="pb-3 font-medium">Booking</th>
             <th class="pb-3 font-medium">Sales</th>
             <th class="pb-3 font-medium">Commission</th>
@@ -271,7 +276,7 @@
           </tr>
         </thead>
         <tbody id="perfTableBody">
-          <tr><td colspan="8" class="py-6"><div class="skeleton h-10"></div></td></tr>
+          <tr><td colspan="9" class="py-6"><div class="skeleton h-10"></div></td></tr>
         </tbody>
       </table>
     </section>

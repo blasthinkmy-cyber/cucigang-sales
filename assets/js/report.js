@@ -32,6 +32,7 @@ form.addEventListener("submit", async (e) => {
     freezing: document.getElementById("freezing").value,
     calls: document.getElementById("calls").value,
     connected: document.getElementById("connected").value,
+    interested: document.getElementById("interested").value,
     booking: document.getElementById("booking").value,
     sales: document.getElementById("sales").value,
   };

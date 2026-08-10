@@ -4,6 +4,7 @@ import {
   contactRate,
   bookingRate,
   closingRate,
+  interestRate,
   averageTicket,
   remainingTarget,
   needPerDay,
@@ -57,7 +58,8 @@ function computeAgentStats(agent, rows, settings, passed, workingDays) {
   const agentRows = rows.filter((r) => r.agent === agent.name);
   const totals = sumReports(agentRows);
   const cRate = contactRate(totals.connected, totals.calls);
-  const clRate = closingRate(totals.booking, totals.connected);
+  const clRate = closingRate(totals.booking, totals.interested);
+  const iRate = interestRate(totals.interested, totals.connected);
   const avgSale = averageTicket(totals.sales, totals.booking);
   const target = agentTarget(agent, settings);
   // Pace-adjusted target: how much of the target an agent *should* have
@@ -85,6 +87,7 @@ function computeAgentStats(agent, rows, settings, passed, workingDays) {
     contactRate: cRate,
     closingRate: clRate,
     bookingRate: bookingRate(totals.booking, totals.connected),
+    interestRate: iRate,
     avgSale,
     score,
     target,
@@ -148,7 +151,8 @@ function mockGetDashboard(viewDate, rangeDays) {
       salesDelta,
       contactRate: contactRate(dayTotals.connected, dayTotals.calls),
       bookingRate: bookingRate(dayTotals.booking, dayTotals.connected),
-      closingRate: closingRate(dayTotals.booking, dayTotals.connected),
+      closingRate: closingRate(dayTotals.booking, dayTotals.interested),
+      interestRate: interestRate(dayTotals.interested, dayTotals.connected),
       booking: dayTotals.booking,
       calls: dayTotals.calls,
       connected: dayTotals.connected,
@@ -183,6 +187,7 @@ function mockGetDashboard(viewDate, rangeDays) {
       leads: monthTotals.fresh + monthTotals.freezing,
       calls: monthTotals.calls,
       connected: monthTotals.connected,
+      interested: monthTotals.interested,
       booking: monthTotals.booking,
       sales: monthTotals.sales,
     },
@@ -214,7 +219,7 @@ function buildChartSeries(rows, settings, days, endDate) {
     labels.push(iso);
     sales.push(totals.sales);
     contact.push(Math.round(contactRate(totals.connected, totals.calls) * 10) / 10);
-    closing.push(Math.round(closingRate(totals.booking, totals.connected) * 10) / 10);
+    closing.push(Math.round(closingRate(totals.booking, totals.interested) * 10) / 10);
     booking.push(totals.booking);
   }
 
@@ -263,7 +268,7 @@ function mockGetAgent(name) {
 }
 
 function mockSubmitReport(payload) {
-  const required = ["name", "date", "calls", "connected", "booking", "sales"];
+  const required = ["name", "date", "calls", "connected", "interested", "booking", "sales"];
   for (const f of required) {
     if (payload[f] === undefined || payload[f] === "" || payload[f] === null) {
       return { status: "error", message: `Missing ${f} value` };
@@ -272,8 +277,11 @@ function mockSubmitReport(payload) {
   if (Number(payload.connected) > Number(payload.calls)) {
     return { status: "error", message: "Connected cannot exceed Calls" };
   }
-  if (Number(payload.booking) > Number(payload.connected)) {
-    return { status: "error", message: "Booking cannot exceed Connected" };
+  if (Number(payload.interested) > Number(payload.connected)) {
+    return { status: "error", message: "Interested cannot exceed Connected" };
+  }
+  if (Number(payload.booking) > Number(payload.interested)) {
+    return { status: "error", message: "Booking cannot exceed Interested" };
   }
   if (Store.hasDuplicate(payload.name, payload.date)) {
     return { status: "error", message: "Report already exists for this agent and date" };
@@ -285,6 +293,7 @@ function mockSubmitReport(payload) {
     freezing: Number(payload.freezing) || 0,
     calls: Number(payload.calls) || 0,
     connected: Number(payload.connected) || 0,
+    interested: Number(payload.interested) || 0,
     booking: Number(payload.booking) || 0,
     sales: Number(payload.sales) || 0,
     timestamp: new Date().toISOString(),
