@@ -22,18 +22,50 @@ import {
 
 // ----------------------------------------------------------------
 // Real backend call helper (Google Apps Script Web App)
+//
+// We use JSONP (a <script> tag), not fetch(). Apps Script Web Apps
+// do not reliably send Access-Control-Allow-Origin headers, so
+// fetch() from an external domain frequently fails with a CORS
+// error even when the deployment is correctly public. Script tags
+// are not subject to CORS at all, and this is Google's own
+// documented workaround for this exact limitation:
+// https://developers.google.com/apps-script/guides/content
 // ----------------------------------------------------------------
-async function callApi(path, options = {}) {
-  const params = new URLSearchParams({ path, ...(options.params || {}) });
-  const url = `${CONFIG.API_URL}?${params.toString()}`;
+let jsonpSeq = 0;
+function jsonp(url, params, timeoutMs = 15000) {
+  return new Promise((resolve, reject) => {
+    const callbackName = `__cspd_cb_${Date.now()}_${jsonpSeq++}`;
+    const script = document.createElement("script");
+
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error("Request timed out — the script may be slow or unreachable"));
+    }, timeoutMs);
+
+    function cleanup() {
+      clearTimeout(timer);
+      delete window[callbackName];
+      script.remove();
+    }
+
+    window[callbackName] = (data) => {
+      cleanup();
+      resolve(data);
+    };
+
+    const qs = new URLSearchParams({ ...params, callback: callbackName });
+    script.src = `${url}?${qs.toString()}`;
+    script.onerror = () => {
+      cleanup();
+      reject(new Error("Could not load the script (check the URL is correct and reachable)"));
+    };
+    document.head.appendChild(script);
+  });
+}
+
+async function callApi(path, params = {}) {
   try {
-    const res = await fetch(url, {
-      method: options.method || "GET",
-      body: options.body ? JSON.stringify(options.body) : undefined,
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
+    return await jsonp(CONFIG.API_URL, { path, ...params });
   } catch (err) {
     return {
       status: "error",
@@ -311,17 +343,17 @@ export const API = {
     const params = {};
     if (opts.date) params.date = opts.date;
     if (opts.range) params.range = opts.range;
-    return callApi("dashboard", { params });
+    return callApi("dashboard", params);
   },
   async getLeaderboard(opts = {}) {
     if (CONFIG.USE_MOCK_DATA) return mockGetLeaderboard(opts.date);
     const params = {};
     if (opts.date) params.date = opts.date;
-    return callApi("leaderboard", { params });
+    return callApi("leaderboard", params);
   },
   async getAgent(name) {
     if (CONFIG.USE_MOCK_DATA) return mockGetAgent(name);
-    return callApi("agent", { params: { id: name } });
+    return callApi("agent", { id: name });
   },
   async getSettings() {
     if (CONFIG.USE_MOCK_DATA) return { status: "success", settings: Store.getSettings() };
@@ -329,11 +361,11 @@ export const API = {
   },
   async updateSettings(partial) {
     if (CONFIG.USE_MOCK_DATA) return { status: "success", settings: Store.saveSettings(partial) };
-    return callApi("settings", { method: "POST", body: partial });
+    return callApi("updateSettings", partial);
   },
   async submitReport(payload) {
     if (CONFIG.USE_MOCK_DATA) return mockSubmitReport(payload);
-    return callApi("submitReport", { method: "POST", body: payload });
+    return callApi("submitReport", payload);
   },
   async getAgentsList() {
     if (CONFIG.USE_MOCK_DATA) return { status: "success", agents: Store.getAgents() };
