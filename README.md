@@ -183,6 +183,60 @@ Deploy from branch → main → /root**.
 - [ ] Clicking an agent name opens the modal with real data
 - [ ] Settings changes (incl. Commission Rate) persist back to the sheet
 
+## Call Log add-on (optional) — MacroDroid + audio recording
+
+`calls.html` shows automated call tracking: every call an agent makes
+is logged as its own row the moment it ends, with the recording
+attached — no manual entry, so it's naturally broken down per call
+and per day (never merged like a manual report could be).
+
+**How data flows:** Agent's Android phone (via MacroDroid) → POSTs
+call metadata + audio (base64) directly to the Apps Script Web App →
+`CallLog.gs` saves the audio to Drive and logs a row in
+`LOGPANGGILAN` → `calls.html` reads it back via the same JSONP
+pattern as the rest of the dashboard.
+
+This is a real POST from MacroDroid (not a browser), so it is **not**
+affected by the CORS/JSONP issue described above — only fetch() calls
+made from a browser hit that limitation.
+
+### Setup
+1. **Create a Drive folder** for recordings. Open it, copy the ID from
+   the URL (`drive.google.com/drive/folders/THIS_PART`).
+2. **Open `CallLog.gs`** in Apps Script, paste the ID into
+   `CALL_RECORDINGS_FOLDER_ID`.
+3. **Add a shared secret** — in the SETTINGS sheet, set `Call Log
+   Secret` to any random string. MacroDroid must send the same value
+   as `secret` in its POST body, or the request is rejected (this
+   endpoint is public, so this stops randoms from spamming your
+   Sheet/Drive).
+4. **Deploy a new version** (Deploy → Manage deployments → pencil →
+   New version) so the new endpoint goes live.
+5. **In MacroDroid**, create a macro triggered on "Call Ends":
+   - Action: HTTP Request (POST) to your Web App exec URL
+   - Content-Type: `application/json`
+   - Body:
+     ```json
+     {
+       "path": "logCall",
+       "secret": "the same random string from step 3",
+       "staff_name": "Ali",
+       "phone_number": "[call_number]",
+       "call_type": "[call_type]",
+       "duration": "[call_duration]",
+       "audio_base64": "[last_file_base64:/storage/emulated/0/CallRecordings]"
+     }
+     ```
+   - Adjust the recording folder path in `[last_file_base64:...]` to
+     match wherever the phone's call recorder actually saves files —
+     this varies by Android build/recorder app.
+
+### Legal note
+Call recording consent laws vary by state/country and by whether the
+call is with a customer or between staff. Check your local
+requirements (and consider a recorded disclosure at the start of
+calls) before turning this on.
+
 ## Intentionally left out
 
 Per the minimal-input principle: Attendance, Product Performance,
