@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CUCIGANG — Sales Performance Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body data-page="landing" class="min-h-screen">
+
+<header class="absolute top-0 left-0 right-0 z-20 px-6 md:px-10 py-6 flex items-center justify-between">
+  <div class="flex items-center gap-2">
+    <div class="w-9 h-9 rounded-xl bg-[#0057FF] flex items-center justify-center text-white font-bold">C</div>
+    <span class="font-semibold tracking-tight text-[15px]">CUCIGANG</span>
+  </div>
+  <button id="themeToggle" class="btn w-10 h-10 rounded-full flex items-center justify-center card card-hover">
+    <i data-lucide="moon" data-theme-icon class="w-4 h-4"></i>
+  </button>
+</header>
+
+<section class="relative min-h-screen flex items-center justify-center px-6 pt-24 pb-16 overflow-hidden">
+  <div class="aurora"></div>
+
+  <div class="relative z-10 max-w-3xl w-full text-center fade-in">
+    <p class="text-xs font-semibold tracking-[0.2em] text-[#0057FF] uppercase mb-4">Telesales Performance Platform</p>
+    <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight leading-[1.05] mb-5">
+      Monitor your team's<br class="hidden md:block" /> performance in real time.
+    </h1>
+    <p class="text-[var(--color-text-soft)] text-base md:text-lg max-w-xl mx-auto mb-10">
+      Replace WhatsApp threads and messy spreadsheets with one dashboard that
+      calculates KPIs automatically and tells you exactly who needs coaching today.
+    </p>
+
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-3 mb-14">
+      <a href="dashboard.html" class="btn btn-primary px-7 py-3.5 font-semibold text-sm w-full sm:w-auto text-center">
+        Open Dashboard
+      </a>
+      <a href="report.html" class="btn px-7 py-3.5 font-semibold text-sm w-full sm:w-auto text-center card card-hover">
+        Submit Daily Report
+      </a>
+    </div>
+
+    <div class="grid grid-cols-3 gap-3 md:gap-4 max-w-xl mx-auto">
+      <div class="card glass rounded-[var(--radius-card)] p-5 text-left">
+        <p class="text-[11px] uppercase tracking-wide text-[var(--color-text-soft)] mb-1">Today's Sales</p>
+        <p class="text-xl md:text-2xl font-bold" id="statSales">—</p>
+      </div>
+      <div class="card glass rounded-[var(--radius-card)] p-5 text-left">
+        <p class="text-[11px] uppercase tracking-wide text-[var(--color-text-soft)] mb-1">Monthly Target</p>
+        <p class="text-xl md:text-2xl font-bold" id="statProgress">—</p>
+      </div>
+      <div class="card glass rounded-[var(--radius-card)] p-5 text-left">
+        <p class="text-[11px] uppercase tracking-wide text-[var(--color-text-soft)] mb-1">Top Agent</p>
+        <p class="text-xl md:text-2xl font-bold" id="statTop">—</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="relative z-10 text-center text-xs text-[var(--color-text-soft)] pb-8">
+  CUCIGANG Sales Performance Dashboard · v1.0 · Running on mock data — see README to connect Google Sheets
+</footer>
+
+<script type="module">
+  import { initTheme, toggleTheme } from "./assets/js/layout.js";
+  import { API } from "./assets/js/api.js";
+  import { money, pct, animateCount } from "./assets/js/utils.js";
+
+  initTheme();
+  lucide.createIcons();
+  document.getElementById("themeToggle").addEventListener("click", () => toggleTheme());
+
+  (async () => {
+    const { kpi, monthly, executiveSummary } = await API.getDashboard();
+    animateCount(document.getElementById("statSales"), kpi.todaySales, { prefix: "RM" });
+    document.getElementById("statProgress").textContent = pct(monthly.progress);
+    document.getElementById("statTop").textContent = executiveSummary.topPerformer
+      ? executiveSummary.topPerformer.agent
+      : "—";
+  })();
+</script>
+</body>
+</html>
