@@ -32,7 +32,7 @@ import {
 // https://developers.google.com/apps-script/guides/content
 // ----------------------------------------------------------------
 let jsonpSeq = 0;
-function jsonp(url, params, timeoutMs = 15000) {
+function jsonp(url, params, timeoutMs = 25000) {
   return new Promise((resolve, reject) => {
     const callbackName = `__cspd_cb_${Date.now()}_${jsonpSeq++}`;
     const script = document.createElement("script");
@@ -64,17 +64,28 @@ function jsonp(url, params, timeoutMs = 15000) {
 }
 
 async function callApi(path, params = {}) {
-  try {
-    return await jsonp(CONFIG.API_URL, { path, ...params });
-  } catch (err) {
-    return {
-      status: "error",
-      message:
-        `Could not reach the backend (${err.message}). Check: (1) the Apps Script deployment's ` +
-        `"Who has access" is set to "Anyone" — not "Anyone with Google account" — and (2) you deployed ` +
-        `a "New version" after the last code change.`,
-    };
+  // Apps Script's exec→echo redirect hop is occasionally slow or
+  // fails outright under repeated/rapid hits (a known Google-side
+  // reliability quirk, not something we control). Retry silently a
+  // couple of times with backoff before surfacing an error — most
+  // failures recover on the 2nd or 3rd attempt within a few seconds.
+  const attempts = 3;
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await jsonp(CONFIG.API_URL, { path, ...params }, 12000);
+    } catch (err) {
+      lastErr = err;
+      if (i < attempts - 1) await new Promise((r) => setTimeout(r, 700 * (i + 1)));
+    }
   }
+  return {
+    status: "error",
+    message:
+      `Could not reach the backend after ${attempts} tries (${lastErr.message}). Check: (1) the Apps Script ` +
+      `deployment's "Who has access" is set to "Anyone" — not "Anyone with Google account" — and (2) you ` +
+      `deployed a "New version" after the last code change.`,
+  };
 }
 
 // ----------------------------------------------------------------
