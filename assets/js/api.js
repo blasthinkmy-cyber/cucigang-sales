@@ -305,6 +305,7 @@ function mockGetAgent(name) {
     sales: r.sales,
     calls: r.calls,
     connected: r.connected,
+    interested: r.interested || 0,
     booking: r.booking,
   }));
   return { status: "success", agent: name, stats, timeline, trend };

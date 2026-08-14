@@ -324,20 +324,38 @@ async function openAgentModal(name) {
       <div class="card rounded-2xl p-3.5"><p class="text-[11px] text-[var(--color-text-soft)]">Avg Sale</p><p class="font-bold">${money(stats.avgSale)}</p></div>
     </div>
 
-    <p class="text-sm font-semibold mb-3">Performance Timeline <span class="text-[var(--color-text-soft)] font-normal">· 30 hari</span></p>
-    <div class="space-y-0 max-h-64 overflow-y-auto">
+    <p class="text-sm font-semibold mb-3">Rekod Harian <span class="text-[var(--color-text-soft)] font-normal">· 30 hari terakhir, terkini dahulu</span></p>
+    <div class="max-h-72 overflow-y-auto -mx-1">
       ${
         timeline.length
-          ? timeline
-              .map((t, i) => {
-                const mark = t.sales > 700 ? "⭐" : t.sales < 200 ? "⚠" : "✅";
-                return `
-        <div class="flex items-center justify-between py-3 ${i < timeline.length - 1 ? "border-b border-[var(--color-border)]" : ""}">
-          <span class="text-xs text-[var(--color-text-soft)]">${dateLabel(t.date)}</span>
-          <span class="text-sm font-semibold">${money(t.sales)} ${mark}</span>
-        </div>`;
-              })
-              .join("")
+          ? `<table class="w-full text-xs">
+              <thead class="sticky top-0 bg-[var(--color-card)]">
+                <tr class="text-left text-[var(--color-text-soft)] uppercase tracking-wide">
+                  <th class="pb-2 pl-1 font-medium">Tarikh</th>
+                  <th class="pb-2 font-medium text-right">Call</th>
+                  <th class="pb-2 font-medium text-right">Connect</th>
+                  <th class="pb-2 font-medium text-right">Minat</th>
+                  <th class="pb-2 font-medium text-right">Booking</th>
+                  <th class="pb-2 pr-1 font-medium text-right">Sales</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${timeline
+                  .map((t, i) => {
+                    const mark = t.sales > 700 ? "⭐" : t.sales < 200 ? "⚠" : "";
+                    return `
+                  <tr class="${i < timeline.length - 1 ? "border-b border-[var(--color-border)]" : ""}">
+                    <td class="py-2.5 pl-1 font-medium whitespace-nowrap">${dateLabel(t.date)}</td>
+                    <td class="py-2.5 text-right text-[var(--color-text-soft)]">${t.calls}</td>
+                    <td class="py-2.5 text-right text-[var(--color-text-soft)]">${t.connected}</td>
+                    <td class="py-2.5 text-right text-[var(--color-text-soft)]">${t.interested}</td>
+                    <td class="py-2.5 text-right text-[var(--color-text-soft)]">${t.booking}</td>
+                    <td class="py-2.5 pr-1 text-right font-semibold">${money(t.sales)} ${mark}</td>
+                  </tr>`;
+                  })
+                  .join("")}
+              </tbody>
+            </table>`
           : `<p class="text-xs text-[var(--color-text-soft)] py-4 text-center">Tiada laporan lagi.</p>`
       }
     </div>
